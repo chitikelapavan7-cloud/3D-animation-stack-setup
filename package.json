@@ -1,0 +1,31 @@
+{
+  "name": "animations-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D animations: Three.js (via @remotion/three / React Three Fiber) + Remotion for captions & audio",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render src/index.ts",
+    "still": "remotion still src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/montserrat": "^5.3.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@remotion/captions": "^4.0.539",
+    "@remotion/cli": "^4.0.539",
+    "@remotion/fonts": "^4.0.539",
+    "@remotion/media-utils": "^4.0.539",
+    "@remotion/three": "^4.0.539",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2"
+  }
+}
