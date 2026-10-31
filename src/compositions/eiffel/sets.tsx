@@ -1,26 +1,75 @@
+import { useThree } from "@react-three/fiber";
 import { ThreeCanvas } from "@remotion/three";
+import { useLayoutEffect } from "react";
+import * as THREE from "three";
 import { AbsoluteFill, useVideoConfig } from "remotion";
-import { Box, Line, ToonMat, toonGradient } from "../../style/toon";
+import { Box, Line, Stick, ToonMat, toonGradient } from "../../style/toon";
 import { canvasTex, planks, rng, shade, speckled } from "../../style/textures";
-import { Building, Chair, Chandelier, Cloud, DeskLamp, EiffelTower, Tree, WallClock, textTex } from "../../style/props";
+import { Building, Chair, Chandelier, Cloud, DeskLamp, EiffelTower, Glow, Tree, WallClock, letterheadTex, textTex } from "../../style/props";
 
 type V3 = [number, number, number];
 
+/**
+ * Soft cast shadows from the strongest directional light (the "key"). Runs after the scene commits each frame,
+ * so props that appear mid-shot are included. Glows, ink lines and transparent cards never cast shadows.
+ */
+const ShadowRig: React.FC<{ extent?: number }> = ({ extent = 6 }) => {
+  const { scene, gl } = useThree();
+  gl.shadowMap.enabled = true;
+  gl.shadowMap.type = THREE.PCFSoftShadowMap;
+  useLayoutEffect(() => {
+    let key: THREE.DirectionalLight | null = null;
+    scene.traverse((o) => {
+      if ((o as THREE.DirectionalLight).isDirectionalLight) {
+        const l = o as THREE.DirectionalLight;
+        if (!key || l.intensity > key.intensity) key = l;
+      }
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.Material;
+      const casts = !!mat && (mat as THREE.MeshToonMaterial).isMeshToonMaterial && !mat.transparent;
+      m.castShadow = casts;
+      m.receiveShadow = casts;
+    });
+    const k = key as THREE.DirectionalLight | null;
+    if (k && !k.castShadow) {
+      k.castShadow = true;
+      k.shadow.mapSize.set(2048, 2048);
+      const c = k.shadow.camera;
+      c.left = -extent;
+      c.right = extent;
+      c.top = extent;
+      c.bottom = -extent;
+      c.near = 0.5;
+      c.far = 60;
+      c.updateProjectionMatrix();
+      k.shadow.bias = -0.0006;
+      k.shadow.normalBias = 0.03;
+      k.shadow.radius = 4;
+    }
+  });
+  return null;
+};
+
 /** Canvas + painted sky + vignette. Children are the 3D scene. */
-export const Stage: React.FC<{ sky: string; vignette?: number; children: React.ReactNode; overlay?: React.ReactNode }> = ({
+export const Stage: React.FC<{ sky: string; vignette?: number; children: React.ReactNode; overlay?: React.ReactNode; shadowExtent?: number }> = ({
   sky,
-  vignette = 0.35,
+  vignette = 0.3,
   children,
   overlay,
+  shadowExtent,
 }) => {
   const { width, height } = useVideoConfig();
   return (
     <AbsoluteFill style={{ background: sky }}>
-      <ThreeCanvas width={width} height={height} flat>
+      <ThreeCanvas width={width} height={height} flat shadows>
         {children}
+        {/* cool back/rim light separates characters from the background */}
+        <directionalLight position={[-3, 4, -6]} intensity={0.45} color="#cfe0ff" />
+        <ShadowRig extent={shadowExtent} />
       </ThreeCanvas>
       <AbsoluteFill
-        style={{ background: `radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 58%, rgba(12,8,24,${vignette}) 100%)` }}
+        style={{ background: `radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 60%, rgba(12,8,24,${vignette}) 100%)` }}
       />
       {overlay}
     </AbsoluteFill>
@@ -61,6 +110,116 @@ const damask = (key: string, base: string, motif: string) =>
     [4, 2],
   );
 
+
+/* ------------------------------------------------------------------ shared set dressing */
+
+const LampPost: React.FC<{ position: V3 }> = ({ position }) => (
+  <group position={position}>
+    <mesh position={[0, 1.2, 0]}>
+      <cylinderGeometry args={[0.045, 0.07, 2.4, 10]} />
+      <ToonMat color="#2b2f36" />
+      <Line t={0.015} />
+    </mesh>
+    <mesh position={[0, 2.5, 0]}>
+      <cylinderGeometry args={[0.13, 0.08, 0.28, 6]} />
+      <ToonMat color="#f6e7b0" emissive="#f6e7b0" emissiveIntensity={0.3} />
+      <Line t={0.015} />
+    </mesh>
+    <mesh position={[0, 2.7, 0]}>
+      <coneGeometry args={[0.17, 0.16, 6]} />
+      <ToonMat color="#2b2f36" />
+      <Line t={0.012} />
+    </mesh>
+  </group>
+);
+
+const Bench: React.FC<{ position: V3; rotationY?: number }> = ({ position, rotationY = 0 }) => (
+  <group position={position} rotation={[0, rotationY, 0]}>
+    <Box size={[1.1, 0.07, 0.36]} position={[0, 0.42, 0]} color="#3f7a4a" line={0.012} />
+    <Box size={[1.1, 0.3, 0.06]} position={[0, 0.66, -0.17]} color="#3f7a4a" line={0.012} />
+    {[-0.45, 0.45].map((x) => (
+      <Box key={x} size={[0.06, 0.42, 0.32]} position={[x, 0.21, 0]} color="#2b2f36" line={0.01} />
+    ))}
+  </group>
+);
+
+const FlowerBed: React.FC<{ position: V3; w?: number; seed?: number }> = ({ position, w = 1.6, seed = 1 }) => {
+  const r = rng(seed);
+  const cols = ["#e8505b", "#f9c74f", "#ffffff", "#c77dff"];
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.08, 0]} scale={[w / 2, 0.16, 0.3]}>
+        <sphereGeometry args={[1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <ToonMat color="#3f8a3a" />
+        <Line t={0.015} />
+      </mesh>
+      {Array.from({ length: 9 }, (_, i) => (
+        <mesh key={i} position={[(i / 8 - 0.5) * w * 0.85, 0.2 + r() * 0.04, (r() - 0.5) * 0.25]}>
+          <sphereGeometry args={[0.055, 8, 6]} />
+          <ToonMat color={cols[i % cols.length]} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
+/** Far skyline strip of rooftops (no outlines so it reads as distance). */
+const Skyline: React.FC<{ z: number; color: string }> = ({ z, color }) => {
+  const r = rng(99);
+  return (
+    <>
+      {Array.from({ length: 22 }, (_, i) => {
+        const w = 2 + r() * 3;
+        const h = 2 + r() * 4;
+        return (
+          <mesh key={i} position={[-40 + i * 3.8 + r(), h / 2, z - r() * 3]}>
+            <boxGeometry args={[w, h, 2]} />
+            <ToonMat color={color} />
+          </mesh>
+        );
+      })}
+    </>
+  );
+};
+
+const Birds: React.FC<{ t: number }> = ({ t }) => (
+  <>
+    {[0, 1, 2].map((i) => {
+      const x = -12 + ((t * 1.6 + i * 3) % 24);
+      const flap = Math.sin(t * 9 + i) * 0.5;
+      return (
+        <group key={i} position={[x, 13 + i * 1.2 + Math.sin(t + i) * 0.3, -24 - i * 2]}>
+          {[-1, 1].map((sd) => (
+            <mesh key={sd} position={[sd * 0.22, 0, 0]} rotation={[0, 0, sd * flap]}>
+              <boxGeometry args={[0.45, 0.05, 0.05]} />
+              <meshBasicMaterial color="#1d1d24" />
+            </mesh>
+          ))}
+        </group>
+      );
+    })}
+  </>
+);
+
+const rug = (key: string, base: string, border: string) =>
+  canvasTex(key, 512, 384, (ctx, w, h) => {
+    ctx.fillStyle = border;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = base;
+    ctx.fillRect(22, 22, w - 44, h - 44);
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 6;
+    ctx.strokeRect(46, 46, w - 92, h - 92);
+    ctx.fillStyle = border;
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, 70, 50, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, 50, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
 /* ------------------------------------------------------------------ Paris / Champ de Mars */
 
 export const ParisSet: React.FC<{ rusty?: boolean; t?: number }> = ({ rusty, t = 0 }) => {
@@ -83,6 +242,14 @@ export const ParisSet: React.FC<{ rusty?: boolean; t?: number }> = ({ rusty, t =
       {[-1, 1].map((s) =>
         [-2, -5, -8, -11].map((z) => <Tree key={`${s}${z}`} position={[s * 3.0, 0, z]} scale={1.2 + r() * 0.2} color={rusty ? "#5c8a48" : "#4f9a3c"} />),
       )}
+      <fog attach="fog" args={[rusty ? "#b9c1cf" : "#cfe6fb", 28, 110]} />
+      {[-1, 1].map((s) => [-3.2, -7.6].map((z) => <LampPost key={`l${s}${z}`} position={[s * 1.9, 0, z]} />))}
+      <Bench position={[-2.25, 0, -1.4]} rotationY={Math.PI / 2} />
+      <Bench position={[2.25, 0, -5.2]} rotationY={-Math.PI / 2} />
+      <FlowerBed position={[-2.2, 0, 0.9]} seed={3} />
+      <FlowerBed position={[2.3, 0, -0.6]} seed={8} />
+      <Skyline z={-38} color={rusty ? "#9aa3b3" : "#a9bcd6"} />
+      <Birds t={t} />
       <Building position={[-9, 0, -12]} size={[3, 5, 3]} rotationY={0.5} />
       <Building position={[-8.5, 0, -18]} size={[3, 6, 3]} wall="#e6d3ad" rotationY={0.4} />
       <Building position={[9, 0, -12]} size={[3, 5.5, 3]} wall="#f1e4c8" rotationY={-0.5} />
@@ -157,6 +324,24 @@ export const OfficeSet: React.FC<{ day?: boolean; clockHours?: number; lamp?: bo
     <Box size={[8, 0.7, 0.16]} position={[0, 0.35, -1.22]} map={planks("wains", "#6b3f22", 8, 3)} color="#ffffff" line={0.02} />
     <Box size={[8, 0.1, 6]} position={[0, -0.05, 1.2]} map={planks("officefloor", "#7a4a2a", 6, 9, [3, 3])} color="#ffffff" line={0} />
     <OfficeWindow position={[1.0, 2.0, -1.22]} day={day} />
+    <group position={[-1.95, 0, -1.0]}>
+      <Box size={[1.1, 2.6, 0.4]} position={[0, 1.3, 0]} color="#5a3420" line={0.02} />
+      {[0.55, 1.15, 1.75, 2.3].map((y, row) =>
+        Array.from({ length: 7 }, (_, i) => (
+          <mesh key={`${row}${i}`} position={[-0.42 + i * 0.14, y + 0.17, 0.12]} rotation={[0, 0, i === 5 ? 0.25 : 0]}>
+            <boxGeometry args={[0.1, 0.34 - ((i + row) % 3) * 0.05, 0.26]} />
+            <ToonMat color={["#8c1f2d", "#2f5a7a", "#c99a3a", "#3f7a4a", "#6b3f22"][(i + row) % 5]} />
+          </mesh>
+        )),
+      )}
+      {[0.4, 1.0, 1.6, 2.2].map((y) => (
+        <Box key={y} size={[1.0, 0.05, 0.36]} position={[0, y, 0.04]} color="#4b2c19" line={0.008} />
+      ))}
+    </group>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.2, 0.004, 0.9]}>
+      <planeGeometry args={[3.2, 2.2]} />
+      <ToonMat map={rug("office-rug", "#7a2533", "#d9a93a")} />
+    </mesh>
     <WallClock position={[-0.9, 2.35, -1.2]} hours={clockHours} />
     {/* door on left wall */}
     <group position={[-2.52, 1.15, 0.9]} rotation={[0, Math.PI / 2, 0]}>
@@ -236,6 +421,29 @@ export const HotelFacade: React.FC = () => (
       <planeGeometry args={[30, 12]} />
       <ToonMat color="#cfc4ac" map={speckled("pavement", "#ffffff", 21, [8, 4])} />
     </mesh>
+    {/* tricolour flags */}
+    {[-1, 1].map((s) => (
+      <group key={s} position={[s * 2.6, 6.4, -0.8]} rotation={[0, 0, s * -0.5]}>
+        <Stick a={[0, 0, 0]} b={[0, 1.6, 0]} r={0.03} color="#2b2f36" />
+        {["#2a4ea8", "#ffffff", "#d23b3b"].map((c, i) => (
+          <mesh key={c} position={[s * (0.17 + i * 0.3), 1.35, 0.02]}>
+            <planeGeometry args={[0.3, 0.55]} />
+            <meshToonMaterial color={c} gradientMap={toonGradient()} side={THREE.DoubleSide} />
+          </mesh>
+        ))}
+      </group>
+    ))}
+    {[-2.6, 2.6].map((x) => (
+      <group key={x} position={[x, 1.04, -0.92]}>
+        <Box size={[1.0, 0.18, 0.22]} color="#5a3420" line={0.012} />
+        {[-0.35, -0.12, 0.12, 0.35].map((dx, i) => (
+          <mesh key={dx} position={[dx, 0.14, 0]}>
+            <sphereGeometry args={[0.08, 8, 6]} />
+            <ToonMat color={i % 2 ? "#e8505b" : "#f9c74f"} />
+          </mesh>
+        ))}
+      </group>
+    ))}
     {/* topiaries */}
     {[-1.3, 1.3].map((x) => (
       <group key={x} position={[x, 0, -0.3]}>
@@ -261,10 +469,11 @@ export const SEATS = {
   nearR: [0.85, 1.05, Math.PI] as const,
 };
 
-export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolean; doorOpen?: number }> = ({
+export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolean; nearChairs?: boolean; doorOpen?: number }> = ({
   dim = 0,
   table = true,
   chairs = true,
+  nearChairs = true,
   doorOpen = 0,
 }) => {
   const wall = damask("dmk-suite", "#7a2533", "#8e3342");
@@ -291,8 +500,20 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0.1]}>
         <planeGeometry args={[5.2, 3.8]} />
-        <ToonMat color="#2d4a7a" />
+        <ToonMat map={rug("suite-rug", "#2d4a7a", "#d9a93a")} />
       </mesh>
+      <Box size={[9, 0.18, 0.2]} position={[0, 3.82, -2.9]} color="#f0e3c6" line={0.015} />
+      <Box size={[9, 0.18, 0.2]} position={[0, 3.82, 4.08]} color="#f0e3c6" line={0.015} />
+      {[-3.4, 3.4].map((x) => (
+        <group key={x} position={[x, 2.25, -2.88]}>
+          <Box size={[0.12, 0.3, 0.08]} color="#d9a93a" line={0.01} />
+          <mesh position={[0, 0.22, 0.08]} scale={[0.05, 0.08, 0.05]}>
+            <sphereGeometry args={[1, 10, 8]} />
+            <meshBasicMaterial color="#ffe3a0" />
+          </mesh>
+          <Glow color="rgba(255,214,140,0.45)" size={1.2} position={[0, 0.2, 0.12]} />
+        </group>
+      ))}
       {/* back wall: window with drapes + portrait */}
       <group position={[-2.1, 2.0, -2.92]}>
         <OfficeWindow position={[0, 0, 0]} day />
@@ -313,7 +534,7 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
         <planeGeometry args={[6, 4]} />
         <meshBasicMaterial color="#f2c879" />
       </mesh>
-      <group position={[-1.0, 1.25, 4.06]} rotation={[0, -doorOpen * 1.7, 0]}>
+      <group position={[-1.0, 1.25, 4.06]} rotation={[0, doorOpen * 1.6, 0]}>
         <group position={[-0.6, 0, 0]} rotation={[0, Math.PI, 0]}>
           <Box size={[1.2, 2.5, 0.08]} map={planks("door2", "#f0e3c6", 2, 4)} color="#ffffff" line={0.02} />
           <mesh position={[-0.42, 0, 0.07]}>
@@ -345,11 +566,40 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
             <boxGeometry args={[2.6, 0.01, 0.5]} />
             <ToonMat color="#e9dcc0" />
           </mesh>
+          {[-1.25, 1.25].map((x) => (
+            <group key={x} position={[x, 0.88, -0.35]}>
+              <mesh position={[0, 0.03, 0]}>
+                <cylinderGeometry args={[0.08, 0.1, 0.05, 14]} />
+                <ToonMat color="#d9a93a" />
+                <Line t={0.008} />
+              </mesh>
+              <Stick a={[0, 0.03, 0]} b={[0, 0.3, 0]} r={0.018} color="#d9a93a" />
+              {[-0.1, 0, 0.1].map((dx) => (
+                <group key={dx} position={[dx, 0.33 + (dx === 0 ? 0.04 : 0), 0]}>
+                  <mesh>
+                    <cylinderGeometry args={[0.018, 0.018, 0.12, 8]} />
+                    <ToonMat color="#fff4dc" />
+                  </mesh>
+                  <mesh position={[0, 0.09, 0]} scale={[0.018, 0.035, 0.018]}>
+                    <sphereGeometry args={[1, 8, 6]} />
+                    <meshBasicMaterial color="#ffc04a" />
+                  </mesh>
+                </group>
+              ))}
+              <Box size={[0.24, 0.025, 0.03]} position={[0, 0.27, 0]} color="#d9a93a" line={0} />
+            </group>
+          ))}
+          <mesh position={[-0.35, 0.882, -0.42]} rotation={[-Math.PI / 2, 0, 0.2]}>
+            <planeGeometry args={[0.32, 0.42]} />
+            <meshToonMaterial map={letterheadTex()} gradientMap={toonGradient()} />
+          </mesh>
         </>
       )}
       {chairs &&
-        Object.values(SEATS).map(([x, z, ry], i) => (
-          <Chair key={i} position={[x + Math.sin(ry) * -0.1, 0, z + Math.cos(ry) * -0.1]} rotationY={ry + Math.PI} />
+        Object.entries(SEATS)
+          .filter(([name]) => nearChairs || !name.startsWith("near"))
+          .map(([, [x, z, ry]], i) => (
+          <Chair key={i} position={[x + Math.sin(ry) * -0.1, 0, z + Math.cos(ry) * -0.1]} rotationY={ry} />
         ))}
       {chairs && <Chair position={[0, 0, -1.25]} rotationY={0} />}
     </>
@@ -374,6 +624,13 @@ export const TrainSet: React.FC<{ t: number; children?: React.ReactNode }> = ({ 
         <planeGeometry args={[120, 40]} />
         <ToonMat color="#7fae4a" map={grass} />
       </mesh>
+      <fog attach="fog" args={["#ffcf9e", 30, 120]} />
+      {[-30, -8, 14, 36].map((x, i) => (
+        <mesh key={x} position={[x + ((t * speed * 0.08) % 44), -0.6, -38 - (i % 2) * 6]} scale={[14, 5 + (i % 2) * 2, 6]}>
+          <sphereGeometry args={[1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <ToonMat color={i % 2 ? "#6f9a52" : "#7fae5a"} />
+        </mesh>
+      ))}
       {/* track bed */}
       <Box size={[200, 0.2, 1.8]} position={[0, -0.5, 0]} color="#8a7a66" line={0} />
       {/* fence posts (fast) */}

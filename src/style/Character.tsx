@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { idleBlink, useSceneTime } from "./time";
 import { INK, Ink, Line, Stick, ToonMat } from "./toon";
 
 type V3 = [number, number, number];
@@ -101,10 +102,18 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
                 <Ink />
               </mesh>
             ) : (
-              <mesh scale={[0.058 * eyeScale, 0.088 * eyeScale * Math.max(open, 0.07), 0.025]}>
-                <sphereGeometry args={[1, 20, 14]} />
-                <Ink />
-              </mesh>
+              <group>
+                <mesh scale={[0.058 * eyeScale, 0.088 * eyeScale * Math.max(open, 0.07), 0.025]}>
+                  <sphereGeometry args={[1, 20, 14]} />
+                  <Ink />
+                </mesh>
+                {open > 0.35 && (
+                  <mesh position={[0.018 * eyeScale, 0.03 * eyeScale * open, 0.026]}>
+                    <circleGeometry args={[0.014 * eyeScale, 12]} />
+                    <meshBasicMaterial color="#ffffff" />
+                  </mesh>
+                )}
+              </group>
             )}
           </OnHead>
         );
@@ -247,8 +256,17 @@ export type CharacterProps = {
   bounce?: number;
   legs?: boolean;
   props?: React.ReactNode; // in body space
-  /** walk-cycle phase in radians (advance ~0.45/frame); omit when standing */
+  /** walk-cycle phase in radians — use walkPhase(distance) so feet never slide; omit when standing */
   walk?: number;
+  /** objects held in the left / right hand (positioned relative to the hand, follow arm swing) */
+  holdL?: React.ReactNode;
+  holdR?: React.ReactNode;
+  /** lip movement driven by the narration loudness (for quoted lines) */
+  talk?: boolean;
+  /** varies idle timing between characters */
+  seed?: number;
+  /** turn off idle breathing / sway / auto-blink (rarely needed) */
+  still?: boolean;
 };
 
 const SHOULDER_Y = 0.98;
@@ -256,6 +274,35 @@ export const SHOULDER_L: V3 = [-0.25, SHOULDER_Y, 0];
 export const SHOULDER_R: V3 = [0.25, SHOULDER_Y, 0];
 /** Body-space hand position for a shoulder + arm offset (use to attach props to hands). */
 export const handPos = (shoulder: V3, arm: V3): V3 => [shoulder[0] + arm[0], shoulder[1] + arm[1], shoulder[2] + arm[2]];
+
+const ARM_LEN = 0.44; // upper + lower arm
+
+/** Two-segment arm with a natural elbow bend (elbow pushed outward/back/down when the hand comes closer). */
+const Arm: React.FC<{ shoulder: V3; hand: V3; side: -1 | 1 }> = ({ shoulder, hand, side }) => {
+  const s = new THREE.Vector3(...shoulder);
+  const h = new THREE.Vector3(...hand);
+  const d = h.clone().sub(s);
+  const dist = d.length();
+  const mid = s.clone().add(h).multiplyScalar(0.5);
+  const bend = Math.sqrt(Math.max(0, (ARM_LEN / 2) ** 2 - (dist / 2) ** 2));
+  if (bend > 0.001) {
+    const out = new THREE.Vector3(side, -0.35, -0.45).normalize();
+    const dir = d.clone().normalize();
+    out.sub(dir.multiplyScalar(out.dot(dir))).normalize();
+    mid.add(out.multiplyScalar(bend));
+  }
+  const e: V3 = [mid.x, mid.y, mid.z];
+  return (
+    <>
+      <Stick a={shoulder} b={e} r={0.03} />
+      <Stick a={e} b={hand} r={0.03} />
+      <mesh position={e}>
+        <sphereGeometry args={[0.03, 10, 8]} />
+        <Ink />
+      </mesh>
+    </>
+  );
+};
 
 /** Big round white head, small bean body, black stick limbs with round hands. */
 export const Character: React.FC<CharacterProps> = ({
@@ -272,15 +319,53 @@ export const Character: React.FC<CharacterProps> = ({
   legs = true,
   props,
   walk,
+  holdL,
+  holdR,
+  talk,
+  seed,
+  still,
 }) => {
-  const shL: V3 = [-0.25, SHOULDER_Y, 0];
-  const shR: V3 = [0.25, SHOULDER_Y, 0];
-  const hand = (s: V3, a: V3): V3 => [s[0] + a[0], s[1] + a[1], s[2] + a[2]];
-  const hL = hand(shL, armL);
-  const hR = hand(shR, armR);
+  const time = useSceneTime();
+  const t = time?.t ?? 0;
+  const sd = seed ?? Math.abs(position[0] * 7.3 + position[2] * 3.1) % 10;
+  const idle = time && !still ? 1 : 0;
+
+  // idle life: breathing, gentle head sway, auto-blink
+  const breath = idle * Math.sin((t + sd) * ((2 * Math.PI) / 3.4));
+  const sway = idle * (walk === undefined ? 1 : 0.4);
+  const head: V3 = [
+    headRot[0] + sway * 0.025 * Math.sin(t * 0.9 + sd),
+    headRot[1] + sway * 0.04 * Math.sin(t * 0.55 + sd * 2),
+    headRot[2] + sway * 0.02 * Math.sin(t * 0.7 + sd * 3),
+  ];
+  const blink = idle ? idleBlink(t, sd) : 1;
+  const voice = talk && time ? time.voice : 0;
+  const talking = voice > 0.06;
+  const liveFace: Face = {
+    ...face,
+    eyeOpenL: (face.eyeOpenL ?? 1) * blink,
+    eyeOpenR: (face.eyeOpenR ?? 1) * blink,
+    ...(talking ? { mouth: "o" as const, mouthOpen: 0.25 + voice * 0.95 } : {}),
+  };
+
+  // arms swing with the walk; hanging arms drift slightly with breathing
+  const swing = (arm: V3, side: -1 | 1): V3 => {
+    const hanging = Math.min(1, Math.max(0, (-arm[1] - 0.12) / 0.15));
+    const w = walk === undefined ? 0 : Math.sin(walk + (side < 0 ? Math.PI : 0)) * 0.14 * hanging;
+    return [arm[0], arm[1] + breath * 0.008, arm[2] + w];
+  };
+  const hL = handPos(SHOULDER_L, swing(armL, -1));
+  const hR = handPos(SHOULDER_R, swing(armR, 1));
+  const walkBob = walk === undefined ? 0 : Math.abs(Math.sin(walk)) * 0.035;
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
+      {legs && (
+        <mesh position={[0, 0.012, 0.02]} rotation={[-Math.PI / 2, 0, 0]} scale={[0.42, 0.3, 1]}>
+          <circleGeometry args={[1, 24]} />
+          <meshBasicMaterial color="#000000" transparent opacity={0.22} depthWrite={false} />
+        </mesh>
+      )}
       {legs &&
         ([-1, 1] as const).map((s) => {
           const ph = walk === undefined ? 0 : walk + (s < 0 ? 0 : Math.PI);
@@ -288,7 +373,7 @@ export const Character: React.FC<CharacterProps> = ({
           const fy = walk === undefined ? 0 : Math.max(0, Math.cos(ph)) * 0.08;
           return (
             <group key={s}>
-              <Stick a={[s * 0.11, 0.55, 0]} b={[s * 0.13, 0.04 + fy, fz]} r={0.032} />
+              <Stick a={[s * 0.11, 0.55 + walkBob, 0]} b={[s * 0.13, 0.04 + fy, fz]} r={0.032} />
               <mesh position={[s * 0.14, 0.035 + fy, 0.05 + fz]} scale={[0.07, 0.04, 0.1]}>
                 <sphereGeometry args={[1, 14, 10]} />
                 <Ink />
@@ -296,24 +381,28 @@ export const Character: React.FC<CharacterProps> = ({
             </group>
           );
         })}
-      <group position={[0, bounce + (walk === undefined ? 0 : Math.abs(Math.sin(walk)) * 0.035), 0]} rotation={[lean, 0, 0]}>
-        <mesh position={[0, 0.83, 0]} scale={[1, 1, 0.85]}>
-          <capsuleGeometry args={[0.29, 0.3, 10, 20]} />
-          <ToonMat color={outfit.color} map={outfit.map} />
-          <Line t={0.026} />
-        </mesh>
+      <group position={[0, bounce + walkBob, 0]} rotation={[lean, 0, 0]}>
+        <group position={[0, 0.53, 0]} scale={[1 - breath * 0.006, 1 + breath * 0.012, 1]}>
+          <mesh position={[0, 0.3, 0]} scale={[1, 1, 0.85]}>
+            <capsuleGeometry args={[0.29, 0.3, 10, 20]} />
+            <ToonMat color={outfit.color} map={outfit.map} />
+            <Line t={0.026} />
+          </mesh>
+        </group>
         {outfit.details}
-        <Stick a={shL} b={hL} r={0.03} />
-        <Stick a={shR} b={hR} r={0.03} />
+        <Arm shoulder={SHOULDER_L} hand={hL} side={-1} />
+        <Arm shoulder={SHOULDER_R} hand={hR} side={1} />
         {[hL, hR].map((p, i) => (
           <mesh key={i} position={p}>
             <sphereGeometry args={[0.065, 16, 12]} />
             <Ink />
           </mesh>
         ))}
+        {holdL && <group position={hL}>{holdL}</group>}
+        {holdR && <group position={hR}>{holdR}</group>}
         {props}
-        <group position={[0, 1.5, 0]} rotation={headRot}>
-          <Head face={face} hat={hat} />
+        <group position={[0, 1.5 + breath * 0.008, 0]} rotation={head}>
+          <Head face={liveFace} hat={hat} />
         </group>
       </group>
     </group>

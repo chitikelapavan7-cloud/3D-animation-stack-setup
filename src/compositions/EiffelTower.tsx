@@ -4,6 +4,8 @@ import { Captions } from "../components/Captions";
 import captionsJson from "../data/eiffel-captions.json";
 import "../style/fonts";
 import * as S from "./eiffel/shots";
+import envelope from "../data/eiffel-voice-envelope.json";
+import { SceneTime } from "../style/time";
 import { toScript, toVoice, VOICE_SECONDS } from "./eiffel/timeMap";
 
 /** The video is exactly as long as the narration (public/audio/eiffel-voiceover.mp3). */
@@ -11,26 +13,26 @@ export const EIFFEL_FPS = 30;
 export const EIFFEL_DURATION = Math.ceil(VOICE_SECONDS * EIFFEL_FPS);
 
 type Transition = "cut" | "fade" | "slide" | "whip" | "iris" | "black";
-const OVERLAP: Record<Transition, number> = { cut: 0, fade: 10, slide: 10, whip: 8, iris: 14, black: 16 };
+const OVERLAP: Record<Transition, number> = { cut: 0, fade: 12, slide: 10, whip: 8, iris: 14, black: 18 };
 
 /** Shot list in script time (see timeMap.ts); each line of the script gets its own shot. */
 const SHOTS: { start: number; tr: Transition; C: React.FC<S.ShotProps> }[] = [
   { start: 0, tr: "cut", C: S.S1Intro }, // A man sold the Eiffel Tower…
-  { start: 4.45, tr: "slide", C: S.S2Rust }, // 1925, rusting, costly, tear it down
-  { start: 11.6, tr: "iris", C: S.S3Letterhead }, // fake government letterhead
-  { start: 14.62, tr: "whip", C: S.S4Hotel }, // fancy hotel suite
-  { start: 16.62, tr: "whip", C: S.S5Dealers }, // five scrap dealers
+  { start: 4.45, tr: "fade", C: S.S2Rust }, // 1925, rusting, costly, tear it down
+  { start: 11.6, tr: "fade", C: S.S3Letterhead }, // fake government letterhead
+  { start: 14.62, tr: "fade", C: S.S4Hotel }, // fancy hotel suite
+  { start: 16.62, tr: "fade", C: S.S5Dealers }, // five scrap dealers
   { start: 19.7, tr: "fade", C: S.S6Meeting }, // "The city can't afford it"
   { start: 23.4, tr: "cut", C: S.S7Bid }, // seven thousand tons of iron
   { start: 25.55, tr: "cut", C: S.S8Riots }, // tell no one, or riots
-  { start: 28.2, tr: "whip", C: S.S9Poisson }, // André Poisson wanted it badly
+  { start: 28.2, tr: "cut", C: S.S9Poisson }, // André Poisson wanted it badly
   { start: 32.0, tr: "cut", C: S.S10FeltOff }, // something felt off
   { start: 34.1, tr: "fade", C: S.S11Confess }, // underpaid official, little bribe
   { start: 39.2, tr: "cut", C: S.S12Realize }, // only a real official asks for a bribe
   { start: 43.1, tr: "cut", C: S.S13Paid }, // Poisson paid
-  { start: 44.3, tr: "whip", C: S.S14Train }, // train out of Paris
+  { start: 44.3, tr: "fade", C: S.S14Train }, // train out of Paris
   { start: 47.9, tr: "fade", C: S.S15Waited }, // waited for the police
-  { start: 51.0, tr: "slide", C: S.S16Embarrassed }, // too embarrassed
+  { start: 51.0, tr: "fade", C: S.S16Embarrassed }, // too embarrassed
   { start: 54.2, tr: "black", C: S.S17Return }, // a month later… sell it again
 ];
 
@@ -55,7 +57,9 @@ const ShotWrap: React.FC<{ from: number; tr: Transition; C: React.FC<S.ShotProps
     <>
       {tr === "black" && f < ov / 2 ? null : (
         <AbsoluteFill style={style}>
-          <C t={t} />
+          <SceneTime.Provider value={{ t, voice: (envelope as number[])[from + f] ?? 0 }}>
+            <C t={t} />
+          </SceneTime.Provider>
         </AbsoluteFill>
       )}
       {black > 0 && <AbsoluteFill style={{ background: "black", opacity: black }} />}
@@ -92,7 +96,7 @@ export const EiffelTower: React.FC = () => {
         );
       })}
 
-      <Captions captions={captionsJson as Caption[]} variant="cartoon" placement="bottom" scale={0.6} />
+      <Captions captions={captionsJson as Caption[]} variant="cartoon" placement="bottom" scale={0.36} combineWithinMs={700} />
       <AbsoluteFill style={{ background: "black", opacity: endFade }} />
 
       {/* the user's voiceover, untouched: full volume, normal speed */}

@@ -41,6 +41,12 @@ cel-shaded 3D sets, punchy colors, vertical 9:16, 1–3 word captions. Templates
 - `style/textures.ts` — seeded procedural textures: `planks`, `stripes`, `dots`, `speckled`, `glow`.
 - `style/Camera.tsx` — `<CameraRig position target fov>` driven per frame.
 - Always pass `flat` to `<ThreeCanvas>` (no tone mapping, so colors stay saturated).
+- Character life is automatic when a shot is wrapped in `SceneTime` (`style/time.ts`): breathing, head sway, staggered
+  blinking. Use `talk` for lip movement from the narration loudness, `walk={walkPhase(distanceTravelled)}` (never
+  frame-based — feet slide), and `holdL/holdR` for props carried in a hand. Arms bend at the elbow automatically.
+- Lighting: `Stage` turns on soft shadows from the strongest directional light (toon meshes cast/receive) and adds a
+  cool rim light; characters with legs get a contact shadow. Glows / ink lines never cast.
+- Chairs face the same way as the character sitting in them (`rotationY` = the character's).
 - Captions: `<Captions captions={words([...])} variant="cartoon" />` (Montserrat 900, white, thick black stroke).
 - Compositions: 1080×1920 @ 30fps.
 
@@ -57,7 +63,8 @@ cel-shaded 3D sets, punchy colors, vertical 9:16, 1–3 word captions. Templates
 7. Re-recorded narration (same script): keep shots authored in script time and only realign the words —
    new `src/data/<name>-captions.json` + `VOICE_SECONDS` in `eiffel/timeMap.ts`, which maps every shot, overlay and
    sfx word-by-word (`toVoice` / `toScript`). Remove the old voice file entirely.
-Captions for narrated shorts: `<Captions variant="cartoon" placement="bottom" scale={0.6} />` — lower area, max 2 lines,
-10% side margins; frame close-ups so faces sit in the upper two-thirds (aim the camera a little below the face).
+Captions for narrated shorts: `<Captions variant="cartoon" placement="bottom" scale={0.36} combineWithinMs={700} />` —
+clean Montserrat 700 on a soft dark pill, lower area, max 2 lines, 10% side margins, never across a sentence end; frame close-ups so faces sit in the upper two-thirds (aim the camera a little below the face).
+Prefer cut / fade (12 f) transitions; avoid whip-blur and camera shake.
 Framing tips for 9:16: the frame is narrow (≈0.43 units wide per 1 unit of distance at fov 42), so stack characters
 in depth / over-the-shoulder instead of side by side; keep cameras inside room walls and above/beside heads (hats occlude).

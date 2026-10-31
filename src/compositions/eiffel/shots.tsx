@@ -19,6 +19,7 @@ import {
 } from "../../style/props";
 import { Line, Stick, ToonMat } from "../../style/toon";
 import { rng } from "../../style/textures";
+import { walkPhase } from "../../style/time";
 import { Dealer, Lustig, Parisian, Poisson } from "./cast";
 import { HotelFacade, OfficeSet, ParisSet, ScrapyardSet, SEATS, SKY_DAY, SKY_GRAY, SKY_SUNSET, Stage, SuiteSet, TrainSet } from "./sets";
 
@@ -123,14 +124,13 @@ export const S2Rust: React.FC<ShotProps> = ({ t }) => {
   const swing = interpolate(t, [9.95, 10.75, 11.6], [1.25, -0.25, 0.1], { ...clamp, easing: Easing.inOut(Easing.quad) });
   const pivot: V3 = [1.2, 10, -3.2];
   const ball: V3 = [pivot[0] + Math.sin(swing) * 8, pivot[1] - Math.cos(swing) * 8, pivot[2]];
-  const hit = shake(t, 10.7, 0.06, 0.6);
   const shout = 0.6 + 0.4 * Math.abs(Math.sin(t * 9));
   const date = ramp(t, 5.05, 5.35) * (1 - ramp(t, 7.3, 7.6));
   return (
     <Stage sky={SKY_GRAY} overlay={<Overlay text="1925" sub="PARIS" opacity={date} />}>
       <CameraRig
-        position={kf3(t, [4.45, 8.2, 8.95, 11.6], [[4, 1.0, 7], [2.0, 0.9, 5.5], [0.05, 1.75, 5.2], [0.0, 1.65 + hit, 4.2]])}
-        target={kf3(t, [4.45, 8.2, 8.95, 11.6], [[0, 9, -16], [0, 7, -16], [0, 1.6, 0.6], [0, 1.6 + hit, 0.6]])}
+        position={kf3(t, [4.45, 8.2, 8.95, 11.6], [[4, 1.0, 7], [2.0, 0.9, 5.5], [0.05, 1.75, 5.2], [0.0, 1.65, 4.4]])}
+        target={kf3(t, [4.45, 8.2, 8.95, 11.6], [[0, 9, -16], [0, 7, -16], [0, 1.6, 0.6], [0, 1.55, 0.6]])}
         fov={42}
       />
       <ParisSet rusty t={t} />
@@ -248,8 +248,11 @@ export const S3Letterhead: React.FC<ShotProps> = ({ t }) => {
 
 /* =================================================================== 4. Fancy hotel suite (14.62 – 16.62) */
 export const S4Hotel: React.FC<ShotProps> = ({ t }) => {
-  const k = ramp(t, 14.62, 15.9, Easing.linear);
-  const pos: V3 = [interpolate(k, [0, 1], [-1.5, -0.3]), 0, interpolate(k, [0, 1], [1.6, 1.25])];
+  const k = ramp(t, 14.62, 15.95, Easing.inOut(Easing.sin));
+  const from: V3 = [-1.5, 0, 1.6];
+  const to: V3 = [-0.3, 0, 1.25];
+  const pos = lerp3(from, to, k);
+  const dist = Math.hypot(to[0] - from[0], to[2] - from[2]) * k;
   const turn = ramp(t, 15.85, 16.15);
   const ry = interpolate(turn, [0, 1], [1.72, 0.35]);
   const tip = ramp(t, 16.05, 16.3);
@@ -264,11 +267,11 @@ export const S4Hotel: React.FC<ShotProps> = ({ t }) => {
       <Lustig
         position={pos}
         rotationY={ry}
-        walk={turn < 0.5 ? t * FPS * 0.42 : undefined}
-        face={{ mouth: "smirk", lookX: turn * 0.2, browR: 0.6, eyeOpenL: blink(t, [15.2]), eyeOpenR: blink(t, [15.2]) }}
+        walk={k < 0.999 ? walkPhase(dist) : undefined}
+        face={{ mouth: "smirk", lookX: turn * 0.2, browR: 0.6 }}
         armL={[-0.05, -0.38, 0.06]}
-        armR={lerp3([0.2, -0.32, 0.12 + Math.sin(t * FPS * 0.42) * 0.12 * (1 - turn)], [-0.08, 0.86, 0.15], tip)}
-        props={<Suitcase position={[-0.3, 0.33, 0.06]} rotation={[0, Math.PI / 2, 0]} scale={0.8} />}
+        armR={lerp3([0.2, -0.32, 0.12], [-0.08, 0.86, 0.15], tip)}
+        holdL={<Suitcase position={[0, -0.24, 0]} rotation={[0, Math.PI / 2, 0]} scale={0.8} />}
       />
     </Stage>
   );
@@ -285,7 +288,7 @@ export const S5Dealers: React.FC<ShotProps> = ({ t }) => {
     [0.25, 0, 3.05],
   ];
   const card = (
-    <group position={[0.38, 1.0, 0.42]} rotation={[Math.PI / 2 - 0.2, 0, 0]} scale={0.7}>
+    <group position={[0, 0.13, 0.03]} rotation={[Math.PI / 2 - 0.2, 0, 0]} scale={0.6}>
       <Paper seal={1} />
     </group>
   );
@@ -300,18 +303,20 @@ export const S5Dealers: React.FC<ShotProps> = ({ t }) => {
       {ends.map((end, i) => {
         const startT = 16.75 + i * 0.42;
         if (t < startT) return null;
-        const k = ramp(t, startT, startT + 1.7, Easing.out(Easing.quad));
+        const k = ramp(t, startT, startT + 1.9, Easing.inOut(Easing.sin));
         const start: V3 = [-1.6, 0, 5.4];
         const p = lerp3(start, end, k);
+        const dist = Math.hypot(end[0] - start[0], end[2] - start[2]) * k;
         const ry = Math.PI + Math.atan2(end[0] - start[0], -(end[2] - start[2])) * (1 - k);
         const walking = k < 0.98;
-        const face = { lookY: 0.15, mouth: "smile" as const, eyeOpenL: blink(t, [18.2 + i * 0.3]), eyeOpenR: blink(t, [18.2 + i * 0.3]) };
+        const face = { lookY: 0.15, lookX: walking ? 0 : (i - 2) * -0.12, mouth: "smile" as const };
         const common = {
           position: p,
           rotationY: walking ? ry : Math.PI,
-          walk: walking ? t * FPS * 0.42 + i : undefined,
-          armR: [0.13, 0.02, 0.4] as V3,
-          props: card,
+          walk: walking ? walkPhase(dist) : undefined,
+          armR: [0.1, -0.05, 0.38] as V3,
+          holdR: card,
+          seed: i * 2.3,
           face,
         };
         return i === 4 ? <Poisson key={i} {...common} /> : <Dealer key={i} variant={i} {...common} />;
@@ -365,6 +370,7 @@ export const S6Meeting: React.FC<ShotProps> = ({ t }) => {
       <SuiteSet />
       <Lustig
         position={LUSTIG_POS}
+        talk={(t > 19.9 && t < 21.4) || t > 22.55}
         lean={whisper * 0.12}
         face={{
           lookX: whisper > 0.5 && t < 21.4 ? Math.sin(t * 7) * 0.6 : 0,
@@ -394,11 +400,12 @@ export const S7Bid: React.FC<ShotProps> = ({ t }) => {
         target={kf3(t, [23.4, 25.55], [[0, 1.3, -0.5], [0, 1.35, -0.6]])}
         fov={42}
       />
-      <SuiteSet />
+      <SuiteSet nearChairs={false} />
       <EiffelTower position={[0, 0.88, 0]} scale={0.075} rotationY={t * 0.4} />
       <Glow color="rgba(255,220,120,0.6)" size={1.2 * sparkle} position={[0, 1.3, 0.2]} />
       <Lustig
         position={LUSTIG_POS}
+        talk
         face={{ mouth: "grin", browL: 0.8, browR: 1, eyeScale: 1.1, lookY: -0.2 }}
         armL={lerp3([-0.18, -0.3, 0.15], [-0.32, 0.08, 0.38], spread)}
         armR={lerp3([0.18, -0.3, 0.15], [0.32, 0.08, 0.38], spread)}
@@ -411,18 +418,19 @@ export const S7Bid: React.FC<ShotProps> = ({ t }) => {
 /* =================================================================== 8. "Tell no one, or there'll be riots" (25.55 – 28.2) */
 export const S8Riots: React.FC<ShotProps> = ({ t }) => {
   const shh = ramp(t, 25.6, 25.85);
-  const pan = ramp(t, 26.6, 26.95, Easing.inOut(Easing.quad));
+  const pan = t >= 26.75 ? 1 : 0; // hard cut to the frightened dealers on "or there'll be riots"
   const fear = ramp(t, 26.9, 27.2);
   return (
     <Stage sky="#2a1a14">
       <CameraRig
-        position={lerp3([0.05, 1.75, 0.85], [-0.55, 1.62, 0.75], pan)}
-        target={lerp3([0, 1.3, -0.95], [-1.95, 1.3, -0.05], pan)}
+        position={pan < 0.5 ? lerp3([0.05, 1.85, 1.5], [0.05, 1.8, 1.25], ramp(t, 25.55, 26.75)) : lerp3([-0.05, 1.85, 0.95], [-0.2, 1.8, 0.8], ramp(t, 26.75, 28.2))}
+        target={pan < 0.5 ? [0, 1.42, -0.95] : [-1.95, 1.5, -0.12]}
         fov={42}
       />
-      <SuiteSet />
+      <SuiteSet nearChairs={false} />
       <Lustig
         position={LUSTIG_POS}
+        talk
         lean={0.12}
         face={{ mouth: "flat", eyeOpenL: 0.6, eyeOpenR: 0.6, browTiltL: -0.25, browTiltR: -0.25, lookX: Math.sin(t * 5) * 0.3 }}
         armR={lerp3([0.18, -0.3, 0.15], [-0.25, 0.4, 0.47], shh)}
@@ -526,13 +534,14 @@ export const S11Confess: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky="#2a1a14">
       <CameraRig
-        position={kf3(t, [34.1, 39.2], [[2.1, 1.8, 2.5], [1.95, 1.75, 2.2]])}
+        position={kf3(t, [34.1, 39.2], [[2.6, 1.8, 2.3], [2.4, 1.75, 2.0]])}
         target={kf3(t, [34.1, 39.2], [[0.55, 1.45, -0.8], [0.55, 1.5, -0.8]])}
         fov={42}
       />
       <SuiteSet />
       <Lustig
         position={lPos}
+        talk={t > 36.2}
         rotationY={0.25}
         lean={lean * 0.15}
         face={{
@@ -761,9 +770,12 @@ export const S16Embarrassed: React.FC<ShotProps> = ({ t }) => {
 
 /* =================================================================== 17. A month later… sell it again (54.2 – 58.32) */
 export const S17Return: React.FC<ShotProps> = ({ t }) => {
-  const k = ramp(t, 54.35, 55.9, Easing.linear);
-  const walking = k < 1;
-  const pos: V3 = [interpolate(k, [0, 1], [2.6, 0.25]), 0, interpolate(k, [0, 1], [2.3, 1.75])];
+  const k = ramp(t, 54.35, 55.95, Easing.inOut(Easing.sin));
+  const walking = k < 0.999;
+  const from: V3 = [2.6, 0, 2.3];
+  const to: V3 = [0.25, 0, 1.75];
+  const pos = lerp3(from, to, k);
+  const dist = Math.hypot(to[0] - from[0], to[2] - from[2]) * k;
   const face = ramp(t, 55.85, 56.15);
   const sign = pop(t, 56.6, 8);
   const tip = ramp(t, 57.0, 57.25);
@@ -771,25 +783,24 @@ export const S17Return: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_DAY} overlay={<Overlay text="ONE MONTH LATER…" opacity={card} top="13%" size={70} />}>
       <CameraRig
-        position={kf3(t, [54.2, 56.4, 57.35, 58.32], [[1.6, 1.75, 6.0], [0.35, 1.75, 4.9], [0.25, 1.75, 4.6], [0.1, 3.6, 7.2]])}
-        target={kf3(t, [54.2, 56.4, 57.35, 58.32], [[0.8, 1.45, 1.6], [0.05, 1.45, 1.6], [0.0, 1.5, 1.6], [0, 8, -16]])}
+        position={kf3(t, [54.2, 56.4, 57.35, 58.32], [[1.6, 1.8, 6.4], [0.35, 1.8, 5.5], [0.25, 1.8, 5.2], [0.1, 3.6, 7.6]])}
+        target={kf3(t, [54.2, 56.4, 57.35, 58.32], [[0.8, 1.55, 1.6], [0.05, 1.55, 1.6], [0.0, 1.6, 1.6], [0, 8, -16]])}
         fov={42}
       />
       <ParisSet t={t} />
       <Lustig
         position={pos}
         rotationY={interpolate(face, [0, 1], [-1.85, 0.15])}
-        walk={walking ? t * FPS * 0.42 : undefined}
+        walk={walking ? walkPhase(dist) : undefined}
         face={{
           mouth: "grin",
-          eyeOpenL: t > 57.0 && t < 57.6 ? 0.08 : blink(t, [55.3]),
-          eyeOpenR: blink(t, [55.3]),
+          eyeOpenL: t > 57.0 && t < 57.6 ? 0.08 : 1,
           browR: 0.8,
           browL: 0.3,
         }}
         armL={[-0.05, -0.38, 0.06]}
-        armR={lerp3([0.2, -0.32, 0.12 + (walking ? Math.sin(t * FPS * 0.42) * 0.12 : 0)], [-0.08, 0.86, 0.15], tip)}
-        props={<Suitcase position={[-0.3, 0.33, 0.06]} rotation={[0, Math.PI / 2, 0]} scale={0.8} />}
+        armR={lerp3([0.2, -0.32, 0.12], [-0.08, 0.86, 0.15], tip)}
+        holdL={<Suitcase position={[0, -0.24, 0]} rotation={[0, Math.PI / 2, 0]} scale={0.8} />}
       />
       <Sign
         tex={textTex("forsale", [{ text: "FOR SALE", size: 100, color: "#c0182c" }, { text: "(again)", size: 56, color: "#1d2a3a", weight: "italic bold" }], { bg: "#f7f0dc", border: "#c0182c" })}

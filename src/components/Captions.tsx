@@ -6,6 +6,25 @@ import { CAPTION_FONT } from "../style/fonts";
 type Variant = "highlight" | "cartoon";
 type Page = ReturnType<typeof createTikTokStyleCaptions>["pages"][number];
 
+/** A caption page never runs across the end of a sentence ("…came. Poisson" → "…came." | "Poisson"). */
+const splitAtSentences = (pages: Page[]): Page[] =>
+  pages.flatMap((page) => {
+    const out: Page[] = [];
+    let cur: Page["tokens"] = [];
+    const flush = () => {
+      if (!cur.length) return;
+      const startMs = cur[0].fromMs;
+      out.push({ text: cur.map((t) => t.text).join(""), startMs, durationMs: cur[cur.length - 1].toMs - startMs, tokens: cur });
+      cur = [];
+    };
+    page.tokens.forEach((tok, i) => {
+      cur.push(tok);
+      if (/[.!?…]["”’]?$/.test(tok.text.trim()) && i < page.tokens.length - 1) flush();
+    });
+    flush();
+    return out;
+  });
+
 /**
  * Captions from Remotion's Caption format (times in ms).
  * - "highlight": word-by-word yellow highlight, bottom of frame.
@@ -21,12 +40,14 @@ export const Captions: React.FC<{
   scale?: number;
 }> = ({ captions, variant = "highlight", combineWithinMs, placement = "center", scale = 1 }) => {
   const { fps } = useVideoConfig();
-  const { pages } = useMemo(
+  const pages = useMemo(
     () =>
-      createTikTokStyleCaptions({
-        captions,
-        combineTokensWithinMilliseconds: combineWithinMs ?? (variant === "cartoon" ? 450 : 1200),
-      }),
+      splitAtSentences(
+        createTikTokStyleCaptions({
+          captions,
+          combineTokensWithinMilliseconds: combineWithinMs ?? (variant === "cartoon" ? 450 : 1200),
+        }).pages,
+      ),
     [captions, variant, combineWithinMs],
   );
 
@@ -57,6 +78,36 @@ const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom"; scale:
       ? { justifyContent: "flex-end", paddingBottom: height * 0.085, paddingLeft: width * 0.1, paddingRight: width * 0.1 }
       : { paddingTop: height * 0.6 };
 
+  if (placement === "bottom") {
+    return (
+      <AbsoluteFill style={{ alignItems: "center", ...position }}>
+        <div
+          style={{
+            fontFamily: CAPTION_FONT,
+            fontWeight: 700,
+            fontSize: size,
+            lineHeight: 1.25,
+            color: "white",
+            background: "rgba(12, 10, 20, 0.62)",
+            borderRadius: size * 0.45,
+            padding: `${size * 0.22}px ${size * 0.5}px`,
+            maxWidth: width * 0.8,
+            textAlign: "center",
+            textShadow: "0 2px 3px rgba(0,0,0,0.5)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            opacity: Math.min(1, pop * 1.4),
+            transform: `translateY(${(1 - pop) * size * 0.25}px)`,
+          }}
+        >
+          {page.text.trim()}
+        </div>
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill style={{ alignItems: "center", ...position }}>
       <div
@@ -70,8 +121,8 @@ const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom"; scale:
           WebkitTextStroke: `${size * 0.16}px #111`,
           paintOrder: "stroke fill",
           textShadow: `0 ${size * 0.05}px 0 #111, 0 ${size * 0.08}px ${size * 0.15}px rgba(0,0,0,0.35)`,
-          whiteSpace: placement === "bottom" ? "normal" : "pre",
-          maxWidth: placement === "bottom" ? width * 0.8 : undefined,
+          whiteSpace: "pre",
+          
           // never more than two lines
           display: "-webkit-box",
           WebkitLineClamp: 2,
@@ -80,7 +131,7 @@ const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom"; scale:
           padding: size * 0.12,
           textAlign: "center",
           transform: `scale(${0.82 + 0.18 * pop})`,
-          transformOrigin: placement === "bottom" ? "50% 100%" : "50% 50%",
+          transformOrigin: "50% 50%",
         }}
       >
         {page.text.trim()}

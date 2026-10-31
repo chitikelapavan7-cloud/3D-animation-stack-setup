@@ -310,34 +310,80 @@ export const Beret: React.FC<{ color?: string }> = ({ color = "#1f2a44" }) => (
 
 /* ---------------------------------------------------------------- outfit details (body space) */
 
-/** White shirt V + tie for suits. */
-export const SuitFront: React.FC<{ tie?: string; shirt?: string }> = ({ tie = "#b3202e", shirt = "#ffffff" }) => (
-  <group position={[0, 0, 0.255]}>
-    <mesh position={[0, 0.98, 0]} rotation={[0, 0, Math.PI]}>
-      <circleGeometry args={[0.13, 3]} />
-      <meshBasicMaterial color={shirt} />
-    </mesh>
-    <mesh position={[0, 0.94, 0.005]} scale={[0.035, 0.09, 1]} rotation={[0, 0, Math.PI / 4]}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial color={tie} />
-    </mesh>
-    <mesh position={[0, 0.98, 0.006]}>
-      <circleGeometry args={[0.022, 12]} />
-      <meshBasicMaterial color={shade(tie, -0.1)} />
-    </mesh>
-  </group>
-);
+let tieGeo: THREE.ShapeGeometry | null = null;
+let vGeo: THREE.ShapeGeometry | null = null;
+const shapes = () => {
+  if (!tieGeo) {
+    const t = new THREE.Shape();
+    t.moveTo(-0.022, 0);
+    t.lineTo(0.022, 0);
+    t.lineTo(0.016, -0.04);
+    t.lineTo(0.036, -0.2);
+    t.lineTo(0, -0.245);
+    t.lineTo(-0.036, -0.2);
+    t.lineTo(-0.016, -0.04);
+    t.closePath();
+    tieGeo = new THREE.ShapeGeometry(t);
+    const v = new THREE.Shape();
+    v.moveTo(-0.12, 0);
+    v.lineTo(0.12, 0);
+    v.lineTo(0, -0.2);
+    v.closePath();
+    vGeo = new THREE.ShapeGeometry(v);
+  }
+  return { tie: tieGeo!, v: vGeo! };
+};
 
-export const BowTie: React.FC<{ color?: string }> = ({ color = "#c0392b" }) => (
-  <group position={[0, 1.0, 0.26]}>
-    {[-1, 1].map((s) => (
-      <mesh key={s} position={[s * 0.05, 0, 0]} rotation={[0, 0, (s * Math.PI) / 2]}>
-        <circleGeometry args={[0.05, 3]} />
-        <meshBasicMaterial color={color} />
-      </mesh>
-    ))}
-  </group>
-);
+/** Shirt collar V, lapels and a long tie, following the curve of the upper chest. */
+export const SuitFront: React.FC<{ tie?: string; shirt?: string; lapel?: string }> = ({ tie = "#b3202e", shirt = "#ffffff", lapel = "#1d1f2b" }) => {
+  const g = shapes();
+  return (
+    <group>
+      <group position={[0, 1.14, 0.205]} rotation={[-0.62, 0, 0]}>
+        <mesh geometry={g.v} scale={[1.25, 1, 1]} position={[0, 0, -0.004]}>
+          <meshBasicMaterial color={lapel} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh geometry={g.v}>
+          <meshBasicMaterial color={shirt} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+      <group position={[0, 1.08, 0.245]} rotation={[-0.16, 0, 0]}>
+        <mesh geometry={g.tie}>
+          <meshBasicMaterial color={tie} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.012, 0.002]} scale={[0.026, 0.02, 1]}>
+          <circleGeometry args={[1, 12]} />
+          <meshBasicMaterial color={shade(tie, -0.1)} />
+        </mesh>
+      </group>
+    </group>
+  );
+};
+
+export const BowTie: React.FC<{ color?: string; shirt?: string }> = ({ color = "#c0392b", shirt = "#ffffff" }) => {
+  const g = shapes();
+  return (
+    <group>
+      <group position={[0, 1.14, 0.205]} rotation={[-0.62, 0, 0]} scale={0.8}>
+        <mesh geometry={g.v}>
+          <meshBasicMaterial color={shirt} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+      <group position={[0, 1.1, 0.238]} rotation={[-0.4, 0, 0]}>
+        {[-1, 1].map((s) => (
+          <mesh key={s} position={[s * 0.045, 0, 0]} rotation={[0, 0, (s * Math.PI) / 2]}>
+            <circleGeometry args={[0.05, 3]} />
+            <meshBasicMaterial color={color} side={THREE.DoubleSide} />
+          </mesh>
+        ))}
+        <mesh position={[0, 0, 0.003]}>
+          <circleGeometry args={[0.018, 10]} />
+          <meshBasicMaterial color={shade(color, -0.12)} />
+        </mesh>
+      </group>
+    </group>
+  );
+};
 
 /* ---------------------------------------------------------------- money & paper */
 

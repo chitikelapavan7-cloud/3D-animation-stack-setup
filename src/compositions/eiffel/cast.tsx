@@ -1,6 +1,6 @@
 import { Character, type CharacterProps, type Face } from "../../style/Character";
 import { Beret, BowlerHat, BowTie, FlatCap, SuitFront, TopHat } from "../../style/props";
-import { stripes } from "../../style/textures";
+import { shade, stripes } from "../../style/textures";
 
 type Partial<T> = { [K in keyof T]?: T[K] };
 type CastProps = Omit<Partial<CharacterProps>, "face"> & { face?: Face };
@@ -10,7 +10,7 @@ export const Lustig: React.FC<CastProps> = ({ face, ...p }) => (
   <Character
     face={{ mouth: "smirk", mustache: "#1d1b1a", browTiltL: -0.05, browTiltR: 0.12, browR: 0.25, ...face }}
     hat={<TopHat tilt={-0.06} />}
-    outfit={{ color: "#2d3040", details: <SuitFront tie="#b3202e" /> }}
+    outfit={{ color: "#2d3040", details: <SuitFront tie="#b3202e" lapel="#1b1d28" /> }}
     {...p}
   />
 );
@@ -39,7 +39,7 @@ export const Dealer: React.FC<CastProps & { variant: number }> = ({ variant, fac
     <Character
       face={{ mouth: "flat", mustache: d.mustache, ...face }}
       hat={d.hat}
-      outfit={{ color: d.outfit, details: <SuitFront tie="#222" shirt="#e8e2d0" /> }}
+      outfit={{ color: d.outfit, details: <SuitFront tie="#2a2a2a" shirt="#e8e2d0" lapel={shade(d.outfit, -0.08)} /> }}
       {...p}
     />
   );
