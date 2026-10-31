@@ -424,7 +424,7 @@ export const S8Riots: React.FC<ShotProps> = ({ t }) => {
     <Stage sky="#2a1a14">
       <CameraRig
         position={pan < 0.5 ? lerp3([0.05, 1.85, 1.5], [0.05, 1.8, 1.25], ramp(t, 25.55, 26.75)) : lerp3([-0.05, 1.85, 0.95], [-0.2, 1.8, 0.8], ramp(t, 26.75, 28.2))}
-        target={pan < 0.5 ? [0, 1.42, -0.95] : [-1.95, 1.5, -0.12]}
+        target={pan < 0.5 ? [0, 1.24, -0.95] : [-1.95, 1.5, -0.12]}
         fov={42}
       />
       <SuiteSet nearChairs={false} />
@@ -591,8 +591,8 @@ export const S12Realize: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky="#2a1a14">
       <CameraRig
-        position={kf3(t, [39.2, 43.1], [[0.85, 2.05, -1.45], [0.85, 2.0, -1.1]])}
-        target={[0.85, 1.82, 1.05]}
+        position={kf3(t, [39.2, 43.1], [[0.85, 1.95, -2.35], [0.85, 1.9, -1.95]])}
+        target={[0.85, 1.6, 1.05]}
         fov={42}
       />
       <SuiteSet />

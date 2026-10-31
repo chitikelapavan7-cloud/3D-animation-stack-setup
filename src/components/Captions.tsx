@@ -7,7 +7,7 @@ type Variant = "highlight" | "cartoon";
 type Page = ReturnType<typeof createTikTokStyleCaptions>["pages"][number];
 
 /** A caption page never runs across the end of a sentence ("…came. Poisson" → "…came." | "Poisson"). */
-const splitAtSentences = (pages: Page[]): Page[] =>
+const splitAtSentences = (pages: Page[], maxWords = Infinity): Page[] =>
   pages.flatMap((page) => {
     const out: Page[] = [];
     let cur: Page["tokens"] = [];
@@ -19,7 +19,8 @@ const splitAtSentences = (pages: Page[]): Page[] =>
     };
     page.tokens.forEach((tok, i) => {
       cur.push(tok);
-      if (/[.!?…]["”’]?$/.test(tok.text.trim()) && i < page.tokens.length - 1) flush();
+      const sentenceEnd = /[.!?…]["”’]?$/.test(tok.text.trim());
+      if ((sentenceEnd || cur.length >= maxWords) && i < page.tokens.length - 1) flush();
     });
     flush();
     return out;
@@ -34,11 +35,19 @@ export const Captions: React.FC<{
   captions: Caption[];
   variant?: Variant;
   combineWithinMs?: number;
-  /** cartoon only: "center" (just below middle) or "bottom" (lower third, clear of faces) */
-  placement?: "center" | "bottom";
+  /**
+   * cartoon only: "center" (just below middle), "bottom" (lower third, clear of faces), or
+   * "reference" — matches the reference shorts: block centred horizontally, its centre anchored at `anchorY`
+   * (fraction of frame height) so resizing never moves it; heavy white text, thin black outline, soft drop shadow.
+   */
+  placement?: "center" | "bottom" | "reference";
+  /** reference placement: vertical centre of the caption block (0–1 of frame height) */
+  anchorY?: number;
+  /** split pages longer than this many words (reference style uses 1–3 words) */
+  maxWords?: number;
   /** cartoon only: font size multiplier (1 = 10.5% of frame width) */
   scale?: number;
-}> = ({ captions, variant = "highlight", combineWithinMs, placement = "center", scale = 1 }) => {
+}> = ({ captions, variant = "highlight", combineWithinMs, placement = "center", scale = 1, anchorY = 0.68, maxWords }) => {
   const { fps } = useVideoConfig();
   const pages = useMemo(
     () =>
@@ -47,8 +56,9 @@ export const Captions: React.FC<{
           captions,
           combineTokensWithinMilliseconds: combineWithinMs ?? (variant === "cartoon" ? 450 : 1200),
         }).pages,
+        maxWords,
       ),
-    [captions, variant, combineWithinMs],
+    [captions, variant, combineWithinMs, maxWords],
   );
 
   return (
@@ -60,7 +70,7 @@ export const Captions: React.FC<{
         const duration = Math.max(1, Math.round((endMs / 1000) * fps) - from);
         return (
           <Sequence key={i} from={from} durationInFrames={duration} layout="none">
-            {variant === "cartoon" ? <CartoonPage page={page} placement={placement} scale={scale} /> : <HighlightPage page={page} />}
+            {variant === "cartoon" ? <CartoonPage page={page} placement={placement} scale={scale} anchorY={anchorY} /> : <HighlightPage page={page} />}
           </Sequence>
         );
       })}
@@ -68,11 +78,49 @@ export const Captions: React.FC<{
   );
 };
 
-const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom"; scale: number }> = ({ page, placement, scale }) => {
+const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom" | "reference"; scale: number; anchorY: number }> = ({
+  page,
+  placement,
+  scale,
+  anchorY,
+}) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const pop = spring({ frame, fps, config: { damping: 11, stiffness: 260, mass: 0.6 } });
   const size = width * 0.105 * scale;
+
+  if (placement === "reference") {
+    return (
+      <AbsoluteFill>
+        <div
+          style={{
+            position: "absolute",
+            left: width * 0.08,
+            right: width * 0.08,
+            top: height * anchorY,
+            transform: `translateY(-50%) scale(${0.94 + 0.06 * pop})`,
+            transformOrigin: "50% 50%",
+            textAlign: "center",
+            fontFamily: CAPTION_FONT,
+            fontWeight: 900,
+            fontSize: size,
+            lineHeight: 1.08,
+            letterSpacing: -size * 0.01,
+            color: "#ffffff",
+            WebkitTextStroke: `${size * 0.13}px #0d0d0d`,
+            paintOrder: "stroke fill",
+            textShadow: `0 ${size * 0.06}px ${size * 0.1}px rgba(0,0,0,0.75), 0 0 ${size * 0.16}px rgba(0,0,0,0.45)`,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "visible",
+          }}
+        >
+          {page.text.trim()}
+        </div>
+      </AbsoluteFill>
+    );
+  }
   const position: React.CSSProperties =
     placement === "bottom"
       ? { justifyContent: "flex-end", paddingBottom: height * 0.085, paddingLeft: width * 0.1, paddingRight: width * 0.1 }

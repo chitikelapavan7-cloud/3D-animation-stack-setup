@@ -63,8 +63,11 @@ cel-shaded 3D sets, punchy colors, vertical 9:16, 1–3 word captions. Templates
 7. Re-recorded narration (same script): keep shots authored in script time and only realign the words —
    new `src/data/<name>-captions.json` + `VOICE_SECONDS` in `eiffel/timeMap.ts`, which maps every shot, overlay and
    sfx word-by-word (`toVoice` / `toScript`). Remove the old voice file entirely.
-Captions for narrated shorts: `<Captions variant="cartoon" placement="bottom" scale={0.36} combineWithinMs={700} />` —
-clean Montserrat 700 on a soft dark pill, lower area, max 2 lines, 10% side margins, never across a sentence end; frame close-ups so faces sit in the upper two-thirds (aim the camera a little below the face).
+Captions for narrated shorts (matches the reference shorts, 15% smaller):
+`<Captions variant="cartoon" placement="reference" anchorY={0.68} scale={0.65} combineWithinMs={450} maxWords={3} />` —
+heavy white Montserrat 900, thin black outline, soft drop shadow, centred, block centre anchored at 68% of frame height
+(resizing never moves it), 1–3 words per caption, never across a sentence end. Keep the caption position fixed;
+if it would cover eyes/mouth in a close-up, re-aim that camera slightly lower instead of moving the caption.
 Prefer cut / fade (12 f) transitions; avoid whip-blur and camera shake.
 Framing tips for 9:16: the frame is narrow (≈0.43 units wide per 1 unit of distance at fov 42), so stack characters
 in depth / over-the-shoulder instead of side by side; keep cameras inside room walls and above/beside heads (hats occlude).
