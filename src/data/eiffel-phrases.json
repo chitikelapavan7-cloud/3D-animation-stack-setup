@@ -1,162 +1,29 @@
 [
- [
-  0.08,
-  1.52,
-  "A man sold the Eiffel Tower,"
- ],
- [
-  1.7,
-  3.33,
-  "and the buyer never called the police."
- ],
- [
-  4.6,
-  7.36,
-  "You see, in 1925 the tower was rusting,"
- ],
- [
-  7.7,
-  8.25,
-  "costly,"
- ],
- [
-  8.38,
-  10.94,
-  "and Paris was openly talking about tearing it down."
- ],
- [
-  11.84,
-  14.47,
-  "So Victor Lustig printed fake government letterhead,"
- ],
- [
-  14.73,
-  16.5,
-  "booked a fancy hotel suite,"
- ],
- [
-  16.72,
-  19.36,
-  "and invited five scrap dealers to a secret meeting."
- ],
- [
-  19.95,
-  21.27,
-  "“The city can’t afford it,”"
- ],
- [
-  21.56,
-  22.15,
-  "he whispered."
- ],
- [
-  22.6,
-  23.3,
-  "“Highest bid gets"
- ],
- [
-  23.52,
-  25.31,
-  "seven thousand tons of iron."
- ],
- [
-  25.71,
-  26.55,
-  "But tell no one,"
- ],
- [
-  26.77,
-  28.0,
-  "or there’ll be riots.”"
- ],
- [
-  28.34,
-  29.01,
-  "One dealer,"
- ],
- [
-  29.23,
-  30.26,
-  "André Poisson,"
- ],
- [
-  30.4,
-  31.33,
-  "wanted it badly."
- ],
- [
-  32.27,
-  33.61,
-  "But something felt off."
- ],
- [
-  34.25,
-  36.03,
-  "So Lustig leaned in and confessed:"
- ],
- [
-  36.23,
-  39.03,
-  "he was an underpaid official, and he’d need a little bribe."
- ],
- [
-  39.35,
-  40.17,
-  "That’s what sold it."
- ],
- [
-  40.37,
-  42.78,
-  "Because only a real official would ask for a bribe."
- ],
- [
-  43.28,
-  44.15,
-  "Poisson paid,"
- ],
- [
-  44.41,
-  45.8,
-  "and Lustig was on a train"
- ],
- [
-  45.88,
-  47.62,
-  "out of Paris with a suitcase of cash."
- ],
- [
-  48.14,
-  49.53,
-  "Then he waited for the police."
- ],
- [
-  49.84,
-  50.83,
-  "They never came."
- ],
- [
-  51.15,
-  53.05,
-  "Poisson was too embarrassed"
- ],
- [
-  53.1,
-  54.05,
-  "to admit he’d been fooled."
- ],
- [
-  54.33,
-  55.2,
-  "So a month later,"
- ],
- [
-  55.2,
-  56.14,
-  "Lustig came back…"
- ],
- [
-  56.47,
-  57.82,
-  "and tried to sell it again."
- ]
+ [0.41, 2.19, "A man sold the Eiffel Tower,"],
+ [2.26, 4.07, "and the buyer never called the police."],
+ [4.60, 5.07, "You see,"],
+ [5.49, 7.91, "in 1925 the tower was rusting,"],
+ [8.01, 8.57, "costly,"],
+ [8.76, 11.77, "and Paris was openly talking about tearing it down."],
+ [12.37, 15.28, "So Victor Lustig printed fake government letterhead,"],
+ [15.69, 17.52, "booked a fancy hotel suite,"],
+ [17.88, 20.95, "and invited five scrap dealers to a secret meeting."],
+ [21.20, 22.43, "“The city can’t afford it,”"],
+ [22.60, 23.13, "he whispered."],
+ [23.55, 26.31, "“Highest bid gets seven thousand tons of iron."],
+ [26.49, 29.03, "But tell no one, or there’ll be riots.”"],
+ [29.54, 32.10, "One dealer, André Poisson, wanted it badly."],
+ [32.31, 33.69, "But something felt off."],
+ [33.95, 35.88, "So Lustig leaned in and confessed:"],
+ [36.29, 39.16, "he was an underpaid official, and he’d need a little bribe."],
+ [39.67, 40.73, "That’s what sold it."],
+ [41.09, 44.01, "Because only a real official would ask for a bribe."],
+ [44.57, 45.44, "Poisson paid,"],
+ [45.66, 47.28, "and Lustig was on a train"],
+ [47.37, 49.26, "out of Paris with a suitcase of cash."],
+ [49.52, 50.94, "Then he waited for the police."],
+ [51.33, 52.18, "They never came."],
+ [52.48, 55.47, "Poisson was too embarrassed to admit he’d been fooled."],
+ [55.82, 57.96, "So a month later, Lustig came back…"],
+ [58.03, 59.38, "and tried to sell it again."]
 ]

@@ -15,7 +15,11 @@ export const Captions: React.FC<{
   captions: Caption[];
   variant?: Variant;
   combineWithinMs?: number;
-}> = ({ captions, variant = "highlight", combineWithinMs }) => {
+  /** cartoon only: "center" (just below middle) or "bottom" (lower third, clear of faces) */
+  placement?: "center" | "bottom";
+  /** cartoon only: font size multiplier (1 = 10.5% of frame width) */
+  scale?: number;
+}> = ({ captions, variant = "highlight", combineWithinMs, placement = "center", scale = 1 }) => {
   const { fps } = useVideoConfig();
   const { pages } = useMemo(
     () =>
@@ -35,7 +39,7 @@ export const Captions: React.FC<{
         const duration = Math.max(1, Math.round((endMs / 1000) * fps) - from);
         return (
           <Sequence key={i} from={from} durationInFrames={duration} layout="none">
-            {variant === "cartoon" ? <CartoonPage page={page} /> : <HighlightPage page={page} />}
+            {variant === "cartoon" ? <CartoonPage page={page} placement={placement} scale={scale} /> : <HighlightPage page={page} />}
           </Sequence>
         );
       })}
@@ -43,14 +47,18 @@ export const Captions: React.FC<{
   );
 };
 
-const CartoonPage: React.FC<{ page: Page }> = ({ page }) => {
+const CartoonPage: React.FC<{ page: Page; placement: "center" | "bottom"; scale: number }> = ({ page, placement, scale }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const pop = spring({ frame, fps, config: { damping: 11, stiffness: 260, mass: 0.6 } });
-  const size = width * 0.105;
+  const size = width * 0.105 * scale;
+  const position: React.CSSProperties =
+    placement === "bottom"
+      ? { justifyContent: "flex-end", paddingBottom: height * 0.085, paddingLeft: width * 0.1, paddingRight: width * 0.1 }
+      : { paddingTop: height * 0.6 };
 
   return (
-    <AbsoluteFill style={{ alignItems: "center", paddingTop: height * 0.6 }}>
+    <AbsoluteFill style={{ alignItems: "center", ...position }}>
       <div
         style={{
           fontFamily: CAPTION_FONT,
@@ -62,9 +70,17 @@ const CartoonPage: React.FC<{ page: Page }> = ({ page }) => {
           WebkitTextStroke: `${size * 0.16}px #111`,
           paintOrder: "stroke fill",
           textShadow: `0 ${size * 0.05}px 0 #111, 0 ${size * 0.08}px ${size * 0.15}px rgba(0,0,0,0.35)`,
-          whiteSpace: "pre",
+          whiteSpace: placement === "bottom" ? "normal" : "pre",
+          maxWidth: placement === "bottom" ? width * 0.8 : undefined,
+          // never more than two lines
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          padding: size * 0.12,
           textAlign: "center",
           transform: `scale(${0.82 + 0.18 * pop})`,
+          transformOrigin: placement === "bottom" ? "50% 100%" : "50% 50%",
         }}
       >
         {page.text.trim()}

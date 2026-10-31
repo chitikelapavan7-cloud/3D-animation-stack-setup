@@ -4,15 +4,16 @@ import { Captions } from "../components/Captions";
 import captionsJson from "../data/eiffel-captions.json";
 import "../style/fonts";
 import * as S from "./eiffel/shots";
+import { toScript, toVoice, VOICE_SECONDS } from "./eiffel/timeMap";
 
-/** Voiceover length: 58.32 s. The video is exactly as long as the narration. */
+/** The video is exactly as long as the narration (public/audio/eiffel-voiceover.mp3). */
 export const EIFFEL_FPS = 30;
-export const EIFFEL_DURATION = Math.ceil(58.32 * EIFFEL_FPS);
+export const EIFFEL_DURATION = Math.ceil(VOICE_SECONDS * EIFFEL_FPS);
 
 type Transition = "cut" | "fade" | "slide" | "whip" | "iris" | "black";
 const OVERLAP: Record<Transition, number> = { cut: 0, fade: 10, slide: 10, whip: 8, iris: 14, black: 16 };
 
-/** Shot list. `start` = narration time (s) the shot begins; each line of the script gets its own shot. */
+/** Shot list in script time (see timeMap.ts); each line of the script gets its own shot. */
 const SHOTS: { start: number; tr: Transition; C: React.FC<S.ShotProps> }[] = [
   { start: 0, tr: "cut", C: S.S1Intro }, // A man sold the Eiffel Tower…
   { start: 4.45, tr: "slide", C: S.S2Rust }, // 1925, rusting, costly, tear it down
@@ -37,7 +38,7 @@ const ShotWrap: React.FC<{ from: number; tr: Transition; C: React.FC<S.ShotProps
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ov = OVERLAP[tr];
-  const t = (from + f) / fps;
+  const t = toScript((from + f) / fps);
   const e = ov === 0 ? 1 : interpolate(f, [0, ov], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
   let style: React.CSSProperties = {};
   let black = 0;
@@ -81,9 +82,9 @@ export const EiffelTower: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: "black" }}>
       {SHOTS.map((s, i) => {
-        const from = Math.round(s.start * fps);
+        const from = Math.round(toVoice(s.start) * fps);
         const next = SHOTS[i + 1];
-        const until = next ? Math.round(next.start * fps) + OVERLAP[next.tr] : durationInFrames;
+        const until = next ? Math.round(toVoice(next.start) * fps) + OVERLAP[next.tr] : durationInFrames;
         return (
           <Sequence key={i} from={from} durationInFrames={until - from} name={s.C.name}>
             <ShotWrap from={from} tr={s.tr} C={s.C} />
@@ -91,15 +92,15 @@ export const EiffelTower: React.FC = () => {
         );
       })}
 
-      <Captions captions={captionsJson as Caption[]} variant="cartoon" />
+      <Captions captions={captionsJson as Caption[]} variant="cartoon" placement="bottom" scale={0.6} />
       <AbsoluteFill style={{ background: "black", opacity: endFade }} />
 
       {/* the user's voiceover, untouched: full volume, normal speed */}
-      <Audio src={staticFile("audio/eiffel-voiceover.wav")} />
+      <Audio src={staticFile("audio/eiffel-voiceover.mp3")} />
       {/* background music kept low under the voice */}
       <Audio src={staticFile("audio/eiffel-music.wav")} volume={0.1} />
       {SFX.map((s, i) => (
-        <Sequence key={`sfx${i}`} from={Math.round(s.at * fps)} durationInFrames={Math.round(2.5 * fps)}>
+        <Sequence key={`sfx${i}`} from={Math.round(toVoice(s.at) * fps)} durationInFrames={Math.round(2.5 * fps)}>
           <Audio src={staticFile(`audio/sfx/${s.file}`)} volume={s.volume} />
         </Sequence>
       ))}

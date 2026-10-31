@@ -54,5 +54,10 @@ cel-shaded 3D sets, punchy colors, vertical 9:16, 1–3 word captions. Templates
 5. Music bed via `node scripts/make-audio.mjs <seconds>`; keep music at `volume={0.1}` and sfx ≤ 0.3 under the voice.
 6. Review: bundle once (`npx remotion bundle src/index.ts --out-dir=.bundle`), render stills per shot at `--scale=0.25`,
    check framing, then `npx remotion render .bundle <Id> out/<name>.mp4 --concurrency=4`.
+7. Re-recorded narration (same script): keep shots authored in script time and only realign the words —
+   new `src/data/<name>-captions.json` + `VOICE_SECONDS` in `eiffel/timeMap.ts`, which maps every shot, overlay and
+   sfx word-by-word (`toVoice` / `toScript`). Remove the old voice file entirely.
+Captions for narrated shorts: `<Captions variant="cartoon" placement="bottom" scale={0.6} />` — lower area, max 2 lines,
+10% side margins; frame close-ups so faces sit in the upper two-thirds (aim the camera a little below the face).
 Framing tips for 9:16: the frame is narrow (≈0.43 units wide per 1 unit of distance at fov 42), so stack characters
 in depth / over-the-shoulder instead of side by side; keep cameras inside room walls and above/beside heads (hats occlude).

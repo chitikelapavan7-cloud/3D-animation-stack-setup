@@ -417,7 +417,7 @@ export const S8Riots: React.FC<ShotProps> = ({ t }) => {
     <Stage sky="#2a1a14">
       <CameraRig
         position={lerp3([0.05, 1.75, 0.85], [-0.55, 1.62, 0.75], pan)}
-        target={lerp3([0, 1.5, -0.95], [-1.95, 1.48, -0.05], pan)}
+        target={lerp3([0, 1.3, -0.95], [-1.95, 1.3, -0.05], pan)}
         fov={42}
       />
       <SuiteSet />
@@ -445,8 +445,8 @@ export const S9Poisson: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky="#2a1a14" overlay={<Overlay text="ANDRÉ POISSON" sub="scrap dealer" opacity={name} top="14%" size={84} />}>
       <CameraRig
-        position={kf3(t, [28.2, 32.0], [[0.55, 1.78, -0.7], [0.82, 1.62, 0.0]])}
-        target={kf3(t, [28.2, 32.0], [[0.8, 1.45, 1.05], [0.85, 1.52, 1.05]])}
+        position={kf3(t, [28.2, 32.0], [[0.55, 1.78, -0.95], [0.82, 1.65, -0.35]])}
+        target={kf3(t, [28.2, 32.0], [[0.8, 1.3, 1.05], [0.85, 1.33, 1.05]])}
         fov={42}
       />
       <SuiteSet />
@@ -486,7 +486,7 @@ export const S10FeltOff: React.FC<ShotProps> = ({ t }) => {
     <Stage sky="#1a1010" vignette={0.6}>
       <CameraRig
         position={kf3(t, [32.0, 34.1], [[0.85, 1.75, -1.05], [0.85, 1.7, -0.8]])}
-        target={[0.85, 1.52, 1.05]}
+        target={[0.85, 1.33, 1.05]}
         roll={kf(t, [32.0, 33.0], [0, 0.13])}
         fov={42}
       />
@@ -583,7 +583,7 @@ export const S12Realize: React.FC<ShotProps> = ({ t }) => {
     <Stage sky="#2a1a14">
       <CameraRig
         position={kf3(t, [39.2, 43.1], [[0.85, 2.05, -1.45], [0.85, 2.0, -1.1]])}
-        target={[0.85, 1.95, 1.05]}
+        target={[0.85, 1.82, 1.05]}
         fov={42}
       />
       <SuiteSet />
