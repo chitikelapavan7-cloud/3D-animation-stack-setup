@@ -17,19 +17,44 @@ export const shade = (hex: string, l: number, s = 0) => {
 
 const cache = new Map<string, THREE.CanvasTexture>();
 
+/** Hand-painted look (reference): many soft, short, slightly darker/lighter brush dabs over the base texture. */
+const brushStrokes = (ctx: CanvasRenderingContext2D, w: number, h: number, seed: number) => {
+  const r = rng(seed);
+  const n = Math.round((w * h) / 700);
+  for (let i = 0; i < n; i++) {
+    const x = r() * w;
+    const y = r() * h;
+    const len = 6 + r() * 18;
+    const ang = (r() - 0.5) * 0.9 + (r() > 0.5 ? 0 : Math.PI / 2);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    ctx.globalAlpha = 0.05 + r() * 0.07;
+    ctx.fillStyle = r() > 0.5 ? "#ffffff" : "#000000";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, len, 1.5 + r() * 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+};
+
 export const canvasTex = (
   key: string,
   w: number,
   h: number,
   draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void,
   repeat: [number, number] = [1, 1],
+  painterly = true,
 ) => {
   const hit = cache.get(key);
   if (hit) return hit;
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
-  draw(c.getContext("2d")!, w, h);
+  const ctx = c.getContext("2d")!;
+  draw(ctx, w, h);
+  if (painterly) brushStrokes(ctx, w, h, key.length * 7 + w);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;

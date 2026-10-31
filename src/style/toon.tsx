@@ -4,13 +4,14 @@ import * as THREE from "three";
 export const INK = "#141414";
 
 let gradient: THREE.DataTexture | null = null;
-/** 3-band cel-shading ramp (shadow / mid / lit). */
+/** Soft toon shading ramp. */
 export const toonGradient = () => {
   if (gradient) return gradient;
-  const data = new Uint8Array([95, 175, 255]);
+  // soft 5-step ramp, linearly blended: gentle painterly shading like the reference (not hard cel bands)
+  const data = new Uint8Array([120, 160, 200, 232, 255]);
   gradient = new THREE.DataTexture(data, data.length, 1, THREE.RedFormat);
-  gradient.minFilter = THREE.NearestFilter;
-  gradient.magFilter = THREE.NearestFilter;
+  gradient.minFilter = THREE.LinearFilter;
+  gradient.magFilter = THREE.LinearFilter;
   gradient.generateMipmaps = false;
   gradient.needsUpdate = true;
   return gradient;

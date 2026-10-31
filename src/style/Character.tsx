@@ -23,6 +23,31 @@ export type Face = {
   skin?: string; // head color override (e.g. blushing red)
   glasses?: string; // round glasses frame color
   heartEyes?: number; // 0..1 scale of heart-shaped eyes (replaces eyes)
+  /** heavy upper eyelid (reference deadpan look): fraction of the eye hidden under a lid line, 0..0.8 */
+  lid?: number;
+};
+
+const eyeGeoCache = new Map<number, THREE.ShapeGeometry>();
+/** Unit ellipse with its top cut flat at `cut` (fraction of height removed from the top). */
+const lidEyeGeometry = (cut: number) => {
+  const key = Math.round(cut * 20) / 20;
+  const hit = eyeGeoCache.get(key);
+  if (hit) return hit;
+  const yc = 1 - 2 * key;
+  const a0 = Math.asin(Math.max(-0.999, Math.min(0.999, yc)));
+  const sh = new THREE.Shape();
+  const N = 28;
+  for (let i = 0; i <= N; i++) {
+    const th = Math.PI - a0 + ((Math.PI + 2 * a0) * i) / N;
+    const x = Math.cos(th);
+    const y = Math.sin(th);
+    if (i === 0) sh.moveTo(x, y);
+    else sh.lineTo(x, y);
+  }
+  sh.closePath();
+  const g = new THREE.ShapeGeometry(sh);
+  eyeGeoCache.set(key, g);
+  return g;
 };
 
 let heartGeo: THREE.ShapeGeometry | null = null;
@@ -74,9 +99,10 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
     mustache,
     blush,
     sweat = 0,
-    skin = "#f6f3ec",
+    skin = "#fbfbfd",
     glasses,
     heartEyes = 0,
+    lid = 0.38,
   } = face;
 
   return (
@@ -84,36 +110,45 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
       <mesh>
         <sphereGeometry args={[HEAD_R, 48, 32]} />
         <ToonMat color={skin} />
-        <Line t={0.032} />
+        <Line t={0.024} />
       </mesh>
 
       {/* eyes */}
       {([-1, 1] as const).map((s) => {
         const open = s < 0 ? eyeOpenL : eyeOpenR;
         return (
-          <OnHead key={`e${s}`} theta={s * 0.25 + lookX * 0.12} phi={0.06 + lookY * 0.1}>
+          <OnHead key={`e${s}`} theta={s * 0.2 + lookX * 0.12} phi={0.05 + lookY * 0.1}>
             {heartEyes > 0 ? (
               <mesh geometry={heartGeometry()} scale={[heartEyes, heartEyes, 1]} position={[0, 0, 0.012]}>
                 <meshBasicMaterial color="#e8283c" side={THREE.DoubleSide} />
               </mesh>
             ) : happyEyes ? (
               <mesh position={[0, -0.02, 0.008]}>
-                <torusGeometry args={[0.055, 0.017, 8, 24, Math.PI]} />
+                <torusGeometry args={[0.045, 0.011, 8, 24, Math.PI]} />
                 <Ink />
               </mesh>
             ) : (
-              <group>
-                <mesh scale={[0.058 * eyeScale, 0.088 * eyeScale * Math.max(open, 0.07), 0.025]}>
-                  <sphereGeometry args={[1, 20, 14]} />
-                  <Ink />
-                </mesh>
-                {open > 0.35 && (
-                  <mesh position={[0.018 * eyeScale, 0.03 * eyeScale * open, 0.026]}>
-                    <circleGeometry args={[0.014 * eyeScale, 12]} />
-                    <meshBasicMaterial color="#ffffff" />
-                  </mesh>
-                )}
-              </group>
+              (() => {
+                const openLid = lid * Math.max(0, 1 - Math.max(0, eyeScale - 1) * 3);
+                const cut = Math.min(0.94, openLid + (1 - openLid) * (1 - Math.max(0, Math.min(1, open))));
+                const rx = 0.043 * eyeScale;
+                const ry = 0.066 * eyeScale;
+                const lidY = (1 - 2 * cut) * ry;
+                const half = Math.sqrt(Math.max(0, 1 - (1 - 2 * cut) ** 2)) * rx;
+                return (
+                  <group>
+                    <mesh geometry={lidEyeGeometry(cut)} scale={[rx, ry, 1]} position={[0, 0, 0.004]}>
+                      <meshBasicMaterial color={INK} side={THREE.DoubleSide} />
+                    </mesh>
+                    {cut > 0.08 && (
+                      <mesh position={[0, lidY, 0.006]} rotation={[0, 0, Math.PI / 2]}>
+                        <capsuleGeometry args={[0.009, Math.max(0.02, half * 2.5), 4, 6]} />
+                        <Ink />
+                      </mesh>
+                    )}
+                  </group>
+                );
+              })()
             )}
           </OnHead>
         );
@@ -124,9 +159,9 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
         const raise = s < 0 ? browL : browR;
         const tilt = s < 0 ? browTiltL : browTiltR;
         return (
-          <OnHead key={`b${s}`} theta={s * 0.26} phi={0.29 + raise * 0.07} lift={0.006}>
+          <OnHead key={`b${s}`} theta={s * 0.21} phi={0.25 + raise * 0.07} lift={0.006}>
             <mesh rotation={[0, 0, Math.PI / 2 - s * tilt]}>
-              <capsuleGeometry args={[0.021, 0.1, 4, 10]} />
+              <capsuleGeometry args={[0.011, 0.085, 4, 10]} />
               <Ink />
             </mesh>
           </OnHead>
@@ -137,19 +172,19 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
       <OnHead theta={0} phi={-0.22} lift={0.006}>
         {mouth === "smile" && (
           <mesh rotation={[0, 0, Math.PI]} position={[0, 0.03, 0]}>
-            <torusGeometry args={[0.06, 0.014, 8, 24, Math.PI]} />
+            <torusGeometry args={[0.05, 0.009, 8, 24, Math.PI]} />
             <Ink />
           </mesh>
         )}
         {mouth === "smirk" && (
           <mesh rotation={[0, 0, Math.PI + 0.35]} position={[0.02, 0.03, 0]}>
-            <torusGeometry args={[0.05, 0.013, 8, 24, Math.PI * 0.7]} />
+            <torusGeometry args={[0.045, 0.009, 8, 24, Math.PI * 0.7]} />
             <Ink />
           </mesh>
         )}
         {mouth === "flat" && (
           <mesh rotation={[0, 0, Math.PI / 2]}>
-            <capsuleGeometry args={[0.013, 0.07, 4, 8]} />
+            <capsuleGeometry args={[0.009, 0.06, 4, 8]} />
             <Ink />
           </mesh>
         )}
@@ -188,7 +223,7 @@ export const Head: React.FC<{ face: Face; hat?: React.ReactNode }> = ({ face, ha
       {mustache &&
         ([-1, 1] as const).map((s) => (
           <OnHead key={`m${s}`} theta={s * 0.085} phi={-0.1} lift={0.01}>
-            <mesh rotation={[0, 0, s * 0.35]} scale={[0.075, 0.032, 0.02]}>
+            <mesh rotation={[0, 0, s * 0.3]} scale={[0.07, 0.022, 0.016]}>
               <sphereGeometry args={[1, 16, 10]} />
               <ToonMat color={mustache} />
               <Line t={0.008} />
@@ -267,7 +302,13 @@ export type CharacterProps = {
   seed?: number;
   /** turn off idle breathing / sway / auto-blink (rarely needed) */
   still?: boolean;
+  /** sitting on a chair: thighs forward, shins down (upper body stays at seat height) */
+  seated?: boolean;
 };
+
+/** Reference proportions: long thin legs. Standing characters' hips sit at HIP_Y; the upper body is lifted to match. */
+export const HIP_Y = 1.1;
+export const STAND_LIFT = HIP_Y - 0.55;
 
 const SHOULDER_Y = 0.98;
 export const SHOULDER_L: V3 = [-0.25, SHOULDER_Y, 0];
@@ -294,10 +335,10 @@ const Arm: React.FC<{ shoulder: V3; hand: V3; side: -1 | 1 }> = ({ shoulder, han
   const e: V3 = [mid.x, mid.y, mid.z];
   return (
     <>
-      <Stick a={shoulder} b={e} r={0.03} />
-      <Stick a={e} b={hand} r={0.03} />
+      <Stick a={shoulder} b={e} r={0.019} />
+      <Stick a={e} b={hand} r={0.019} />
       <mesh position={e}>
-        <sphereGeometry args={[0.03, 10, 8]} />
+        <sphereGeometry args={[0.019, 10, 8]} />
         <Ink />
       </mesh>
     </>
@@ -324,6 +365,7 @@ export const Character: React.FC<CharacterProps> = ({
   talk,
   seed,
   still,
+  seated,
 }) => {
   const time = useSceneTime();
   const t = time?.t ?? 0;
@@ -357,36 +399,56 @@ export const Character: React.FC<CharacterProps> = ({
   const hL = handPos(SHOULDER_L, swing(armL, -1));
   const hR = handPos(SHOULDER_R, swing(armR, 1));
   const walkBob = walk === undefined ? 0 : Math.abs(Math.sin(walk)) * 0.035;
+  const lift = legs && !seated ? STAND_LIFT : 0;
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {legs && (
+      {legs && !seated && (
         <mesh position={[0, 0.012, 0.02]} rotation={[-Math.PI / 2, 0, 0]} scale={[0.42, 0.3, 1]}>
           <circleGeometry args={[1, 24]} />
           <meshBasicMaterial color="#000000" transparent opacity={0.22} depthWrite={false} />
         </mesh>
       )}
       {legs &&
+        !seated &&
         ([-1, 1] as const).map((s) => {
           const ph = walk === undefined ? 0 : walk + (s < 0 ? 0 : Math.PI);
-          const fz = walk === undefined ? 0 : Math.sin(ph) * 0.17;
-          const fy = walk === undefined ? 0 : Math.max(0, Math.cos(ph)) * 0.08;
+          const fz = walk === undefined ? 0 : Math.sin(ph) * 0.26;
+          const fy = walk === undefined ? 0 : Math.max(0, Math.cos(ph)) * 0.1;
+          const hip: V3 = [s * 0.09, HIP_Y + walkBob, 0];
+          const foot: V3 = [s * 0.11, 0.035 + fy, fz];
+          // slight knee bend while stepping
+          const knee: V3 = [s * 0.1, (hip[1] + foot[1]) / 2 + fy * 0.3, (hip[2] + foot[2]) / 2 + 0.06 + fy * 0.5];
           return (
             <group key={s}>
-              <Stick a={[s * 0.11, 0.55 + walkBob, 0]} b={[s * 0.13, 0.04 + fy, fz]} r={0.032} />
-              <mesh position={[s * 0.14, 0.035 + fy, 0.05 + fz]} scale={[0.07, 0.04, 0.1]}>
+              <Stick a={hip} b={knee} r={0.021} />
+              <Stick a={knee} b={foot} r={0.021} />
+              <mesh position={[s * 0.11, 0.03 + fy, 0.04 + fz]} scale={[0.05, 0.03, 0.08]}>
                 <sphereGeometry args={[1, 14, 10]} />
                 <Ink />
               </mesh>
             </group>
           );
         })}
-      <group position={[0, bounce + walkBob, 0]} rotation={[lean, 0, 0]}>
+      {legs &&
+        seated &&
+        ([-1, 1] as const).map((s) => (
+          <group key={s}>
+            <Stick a={[s * 0.09, 0.55, 0]} b={[s * 0.11, 0.53, 0.42]} r={0.021} />
+            <Stick a={[s * 0.11, 0.53, 0.42]} b={[s * 0.12, 0.04, 0.46]} r={0.021} />
+            <mesh position={[s * 0.12, 0.03, 0.5]} scale={[0.05, 0.03, 0.08]}>
+              <sphereGeometry args={[1, 14, 10]} />
+              <Ink />
+            </mesh>
+          </group>
+        ))}
+      <group position={[0, bounce + walkBob + lift, 0]} rotation={[lean, 0, 0]}>
         <group position={[0, 0.53, 0]} scale={[1 - breath * 0.006, 1 + breath * 0.012, 1]}>
-          <mesh position={[0, 0.3, 0]} scale={[1, 1, 0.85]}>
-            <capsuleGeometry args={[0.29, 0.3, 10, 20]} />
+          {/* slimmer, slightly tapered torso (reference) */}
+          <mesh position={[0, 0.3, 0]} scale={[0.92, 1, 0.8]}>
+            <capsuleGeometry args={[0.27, 0.33, 10, 20]} />
             <ToonMat color={outfit.color} map={outfit.map} />
-            <Line t={0.026} />
+            <Line t={0.02} />
           </mesh>
         </group>
         {outfit.details}
@@ -394,7 +456,7 @@ export const Character: React.FC<CharacterProps> = ({
         <Arm shoulder={SHOULDER_R} hand={hR} side={1} />
         {[hL, hR].map((p, i) => (
           <mesh key={i} position={p}>
-            <sphereGeometry args={[0.065, 16, 12]} />
+            <sphereGeometry args={[0.046, 16, 12]} />
             <Ink />
           </mesh>
         ))}
@@ -402,7 +464,7 @@ export const Character: React.FC<CharacterProps> = ({
         {holdR && <group position={hR}>{holdR}</group>}
         {props}
         <group position={[0, 1.5 + breath * 0.008, 0]} rotation={head}>
-          <Head face={liveFace} hat={hat} />
+          <Head face={liveFace} hat={hat ? <group scale={0.88}>{hat}</group> : undefined} />
         </group>
       </group>
     </group>

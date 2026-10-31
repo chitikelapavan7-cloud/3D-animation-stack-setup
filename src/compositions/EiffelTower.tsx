@@ -96,7 +96,7 @@ export const EiffelTower: React.FC = () => {
         );
       })}
 
-      <Captions captions={captionsJson as Caption[]} variant="cartoon" placement="reference" anchorY={0.68} scale={0.65} combineWithinMs={450} maxWords={3} />
+      <Captions captions={captionsJson as Caption[]} variant="cartoon" placement="reference" anchorY={0.705} scale={0.485} combineWithinMs={400} maxWords={2} />
       <AbsoluteFill style={{ background: "black", opacity: endFade }} />
 
       {/* the user's voiceover, untouched: full volume, normal speed */}

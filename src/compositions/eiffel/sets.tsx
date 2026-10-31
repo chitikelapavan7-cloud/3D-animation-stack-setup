@@ -1,8 +1,8 @@
 import { useThree } from "@react-three/fiber";
 import { ThreeCanvas } from "@remotion/three";
-import { useLayoutEffect } from "react";
+import { useId, useLayoutEffect } from "react";
 import * as THREE from "three";
-import { AbsoluteFill, useVideoConfig } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { Box, Line, Stick, ToonMat, toonGradient } from "../../style/toon";
 import { canvasTex, planks, rng, shade, speckled } from "../../style/textures";
 import { Building, Chair, Chandelier, Cloud, DeskLamp, EiffelTower, Glow, Tree, WallClock, letterheadTex, textTex } from "../../style/props";
@@ -60,14 +60,34 @@ export const Stage: React.FC<{ sky: string; vignette?: number; children: React.R
   shadowExtent,
 }) => {
   const { width, height } = useVideoConfig();
+  const frame = useCurrentFrame();
+  const grainId = `grain${useId().replace(/:/g, "")}`;
   return (
     <AbsoluteFill style={{ background: sky }}>
+      {/* reference grade: richer saturation, slightly warmer */}
+      <AbsoluteFill style={{ filter: "saturate(1.14) contrast(1.04)" }}>
       <ThreeCanvas width={width} height={height} flat shadows>
         {children}
         {/* cool back/rim light separates characters from the background */}
         <directionalLight position={[-3, 4, -6]} intensity={0.45} color="#cfe0ff" />
         <ShadowRig extent={shadowExtent} />
       </ThreeCanvas>
+      </AbsoluteFill>
+      {/* warm sunlight wash from the upper left, cool shade lower right */}
+      <AbsoluteFill
+        style={{
+          background: "linear-gradient(155deg, rgba(255,196,120,0.22) 0%, rgba(255,170,90,0) 45%, rgba(60,40,110,0.16) 100%)",
+          mixBlendMode: "soft-light",
+        }}
+      />
+      {/* animated film grain (deterministic per frame) */}
+      <svg width={width} height={height} style={{ position: "absolute", inset: 0, opacity: 0.11, mixBlendMode: "overlay" }}>
+        <filter id={grainId}>
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves={2} seed={frame % 47} stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter={`url(#${grainId})`} />
+      </svg>
       <AbsoluteFill
         style={{ background: `radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 60%, rgba(12,8,24,${vignette}) 100%)` }}
       />
@@ -316,6 +336,7 @@ export const OfficeSet: React.FC<{ day?: boolean; clockHours?: number; lamp?: bo
   desk = true,
 }) => (
   <>
+    <fog attach="fog" args={[day ? "#e9d8c0" : "#2a2034", 5, 22]} />
     <ambientLight intensity={day ? 0.75 : 0.55} color={day ? "#ffffff" : "#8f84a8"} />
     <directionalLight position={[2, 4, 4]} intensity={day ? 1.3 : 0.35} color={day ? "#fff1d6" : "#9fb0ff"} />
     {lamp && <pointLight position={[-0.7, 1.5, 0.9]} intensity={day ? 0 : 4} decay={1.3} color="#ffd9a0" />}
@@ -479,6 +500,7 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
   const wall = damask("dmk-suite", "#7a2533", "#8e3342");
   return (
     <>
+      <fog attach="fog" args={["#4a2a26", 6, 24]} />
       <ambientLight intensity={0.75 - dim * 0.3} color="#fff0e0" />
       <directionalLight position={[2, 5, 4]} intensity={1.1 - dim * 0.5} color="#fff1d6" />
       <directionalLight position={[-3, 3, -2]} intensity={0.4} color="#ffd8a8" />
@@ -488,7 +510,7 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
       {/* front wall, split around the doorway (x -2.2..-1.0, y 0..2.5) */}
       <Box size={[2.3, 4, 0.12]} position={[-3.35, 1.9, 4.2]} map={wall} color="#ffffff" line={0} />
       <Box size={[5.5, 4, 0.12]} position={[1.75, 1.9, 4.2]} map={wall} color="#ffffff" line={0} />
-      <Box size={[1.2, 1.4, 0.12]} position={[-1.6, 3.2, 4.2]} map={wall} color="#ffffff" line={0} />
+      <Box size={[1.2, 0.95, 0.12]} position={[-1.6, 3.425, 4.2]} map={wall} color="#ffffff" line={0} />
       <Box size={[0.12, 4, 7.4]} position={[-4.2, 1.9, 0.6]} map={wall} color="#ffffff" line={0} />
       <Box size={[0.12, 4, 7.4]} position={[4.2, 1.9, 0.6]} map={wall} color="#ffffff" line={0} />
       <Box size={[9, 0.9, 0.08]} position={[0, 0.45, -2.92]} color="#f0e3c6" line={0.02} />
@@ -534,9 +556,9 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
         <planeGeometry args={[6, 4]} />
         <meshBasicMaterial color="#f2c879" />
       </mesh>
-      <group position={[-1.0, 1.25, 4.06]} rotation={[0, doorOpen * 1.6, 0]}>
+      <group position={[-1.0, 1.475, 4.06]} rotation={[0, doorOpen * 1.6, 0]}>
         <group position={[-0.6, 0, 0]} rotation={[0, Math.PI, 0]}>
-          <Box size={[1.2, 2.5, 0.08]} map={planks("door2", "#f0e3c6", 2, 4)} color="#ffffff" line={0.02} />
+          <Box size={[1.2, 2.95, 0.08]} map={planks("door2", "#f0e3c6", 2, 4)} color="#ffffff" line={0.02} />
           <mesh position={[-0.42, 0, 0.07]}>
             <sphereGeometry args={[0.05, 12, 8]} />
             <ToonMat color="#d9a93a" />

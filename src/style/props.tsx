@@ -30,7 +30,7 @@ export const textTex = (
       ctx.fillText(l.text, w / 2, y);
       y += l.size * 1.15;
     }
-  });
+  }, [1, 1], false);
 
 /** A sign board on a post. */
 export const Sign: React.FC<{ tex: THREE.Texture; w?: number; h?: number; post?: number; position?: V3; rotation?: V3; scale?: number }> = ({
@@ -399,7 +399,7 @@ const billTex = () =>
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("F", w / 2, h / 2 + 2);
-  });
+  }, [1, 1], false);
 
 export const CashStack: React.FC<{ position?: V3; rotation?: V3; n?: number }> = ({ position, rotation, n = 4 }) => (
   <group position={position} rotation={rotation}>
@@ -478,7 +478,7 @@ export const letterheadTex = () =>
     ctx.fillStyle = "#9a9387";
     const r = rng(4);
     for (let y = 118; y < h - 70; y += 18) ctx.fillRect(30, y, (w - 60) * (0.6 + r() * 0.4), 6);
-  });
+  }, [1, 1], false);
 
 export const Paper: React.FC<{ position?: V3; rotation?: V3; seal?: number; scale?: number }> = ({ position, rotation, seal = 0, scale = 1 }) => (
   <group position={position} rotation={rotation} scale={scale}>

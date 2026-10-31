@@ -1,6 +1,6 @@
 import { AbsoluteFill, Easing, interpolate, spring } from "remotion";
 import { CameraRig } from "../../style/Camera";
-import { HEAD_R, SHOULDER_L, SHOULDER_R } from "../../style/Character";
+import { HEAD_R, SHOULDER_L, SHOULDER_R, STAND_LIFT } from "../../style/Character";
 import { CAPTION_FONT } from "../../style/fonts";
 import {
   CashStack,
@@ -86,6 +86,7 @@ export const S1Intro: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_DAY}>
       <CameraRig
+        lift={STAND_LIFT}
         position={kf3(t, [0, 1.8, 4.6], [[0, 13, 9], [0.4, 1.95, 6.4], [0.2, 1.8, 5.2]])}
         target={kf3(t, [0, 1.8, 4.6], [[0, 17, -16], [0.05, 1.45, 1.5], [0.0, 1.5, 1.6]])}
         fov={42}
@@ -129,6 +130,7 @@ export const S2Rust: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_GRAY} overlay={<Overlay text="1925" sub="PARIS" opacity={date} />}>
       <CameraRig
+        lift={STAND_LIFT}
         position={kf3(t, [4.45, 8.2, 8.95, 11.6], [[4, 1.0, 7], [2.0, 0.9, 5.5], [0.05, 1.75, 5.2], [0.0, 1.65, 4.4]])}
         target={kf3(t, [4.45, 8.2, 8.95, 11.6], [[0, 9, -16], [0, 7, -16], [0, 1.6, 0.6], [0, 1.55, 0.6]])}
         fov={42}
@@ -259,6 +261,7 @@ export const S4Hotel: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_DAY}>
       <CameraRig
+        lift={STAND_LIFT}
         position={kf3(t, [14.62, 16.62], [[1.4, 0.55, 6.6], [0.7, 1.35, 4.9]])}
         target={kf3(t, [14.62, 16.62], [[-0.6, 3.0, -1], [-0.3, 1.55, 0.9]])}
         fov={42}
@@ -295,7 +298,8 @@ export const S5Dealers: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky="#2a1a14">
       <CameraRig
-        position={kf3(t, [16.62, 19.7], [[0.35, 1.9, -1.4], [0.0, 1.75, -0.6]])}
+        lift={STAND_LIFT}
+        position={kf3(t, [16.62, 19.7], [[0.35, 1.95, -1.9], [0.0, 1.8, -1.2]])}
         target={kf3(t, [16.62, 19.7], [[-1.2, 1.4, 4], [-0.45, 1.35, 2.2]])}
         fov={42}
       />
@@ -694,6 +698,7 @@ export const S15Waited: React.FC<ShotProps> = ({ t }) => {
       <OfficeSet day clockHours={hours} desk={false} />
       <Chair position={[lPos[0], 0, lPos[2] - 0.05]} rotationY={-0.25} color="#2f5a4a" />
       <Lustig
+        seated
         position={[lPos[0], 0.02, lPos[2]]}
         rotationY={-0.25}
         face={{
@@ -742,7 +747,8 @@ export const S16Embarrassed: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_GRAY}>
       <CameraRig
-        position={kf3(t, [51.0, 54.2], [[0, 1.95, 4.6], [0.15, 1.75, 3.2]])}
+        lift={STAND_LIFT}
+        position={kf3(t, [51.0, 54.2], [[0, 1.95, 5.0], [0.15, 1.8, 3.8]])}
         target={[0.25, 1.6, 0.5]}
         fov={42}
       />
@@ -753,8 +759,8 @@ export const S16Embarrassed: React.FC<ShotProps> = ({ t }) => {
         hatDown={1}
         headRot={[0.12, shakeHead, 0]}
         face={{ skin, eyeOpenL: 0.12 + peek * 0.5, eyeOpenR: 0.12 + peek * 0.5, browTiltL: 0.35, browTiltR: 0.35, mouth: "flat", sweat: red, lookX: peek * 0.3 }}
-        armL={lerp3([0.17, 0.48, 0.44], [0.0, 0.38, 0.44], peek)}
-        armR={lerp3([-0.17, 0.48, 0.44], [0.0, 0.38, 0.44], peek)}
+        armL={lerp3([0.16, 0.5, 0.58], [0.02, 0.38, 0.58], peek)}
+        armR={lerp3([-0.16, 0.5, 0.58], [-0.02, 0.38, 0.58], peek)}
         props={
           <group position={[0, 2.75, 0]}>
             <Cloud position={[0, 0, 0]} scale={0.22} color="#8a909c" />
@@ -783,6 +789,7 @@ export const S17Return: React.FC<ShotProps> = ({ t }) => {
   return (
     <Stage sky={SKY_DAY} overlay={<Overlay text="ONE MONTH LATER…" opacity={card} top="13%" size={70} />}>
       <CameraRig
+        lift={STAND_LIFT}
         position={kf3(t, [54.2, 56.4, 57.35, 58.32], [[1.6, 1.8, 6.4], [0.35, 1.8, 5.5], [0.25, 1.8, 5.2], [0.1, 3.6, 7.6]])}
         target={kf3(t, [54.2, 56.4, 57.35, 58.32], [[0.8, 1.55, 1.6], [0.05, 1.55, 1.6], [0.0, 1.6, 1.6], [0, 8, -16]])}
         fov={42}
