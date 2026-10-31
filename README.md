@@ -15,11 +15,18 @@ npx remotion render src/index.ts StyleCabin out/cabin.mp4    # render a composit
 npm run typecheck
 ```
 
-Compositions: `Demo3D` (stack demo, 16:9), `StyleCabin` and `StyleDock` (4 s cel-shaded cartoon style tests, 9:16).
+Compositions: `Demo3D` (stack demo, 16:9), `StyleCabin` and `StyleDock` (4 s cel-shaded cartoon style tests, 9:16),
+and **`EiffelTower`** — the full 58 s short *“The Man Who Sold the Eiffel Tower”*, synced to the narrator's voiceover
+(rendered video: `renders/EiffelTower.mp4`).
 
 - `src/style/` — reusable cartoon style kit: character rig, toon materials + outlines, procedural textures, camera rig.
 - `src/components/Captions.tsx` — captions (`cartoon` and `highlight` variants).
-- `public/` — fonts and audio.
+- `src/style/props.tsx` — prop library (Eiffel Tower, hats, money, signs, stamp, lamps, clock, lightbulb…).
+- `src/compositions/eiffel/` — the Eiffel short: `cast.tsx`, `sets.tsx`, `shots.tsx` (17 shots), timeline in `EiffelTower.tsx`.
+- `src/data/` — script phrases with voiceover timings + generated word captions.
+- `scripts/align-script.mjs` — aligns a known script to a voiceover (phrase timings → word captions).
+- `scripts/make-audio.mjs` — generates the background music bed and sound effects.
+- `public/` — fonts and audio (voiceover, music, sfx).
 - `CLAUDE.md` — stack rules and style guide used when creating new animations.
 
 WebGL uses the GPU (`angle`) when available and falls back to software (`swangle`) otherwise;

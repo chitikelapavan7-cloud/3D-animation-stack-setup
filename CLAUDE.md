@@ -43,3 +43,16 @@ cel-shaded 3D sets, punchy colors, vertical 9:16, 1–3 word captions. Templates
 - Always pass `flat` to `<ThreeCanvas>` (no tone mapping, so colors stay saturated).
 - Captions: `<Captions captions={words([...])} variant="cartoon" />` (Montserrat 900, white, thick black stroke).
 - Compositions: 1080×1920 @ 30fps.
+
+## Narrated videos (voiceover → synced animation) — see `src/compositions/EiffelTower.tsx`
+1. Copy the voiceover to `public/audio/` unchanged. Composition length = `Math.ceil(audioSeconds * fps)`; never retime the voice.
+2. Find phrase boundaries: `ffmpeg -i voice.wav -af silencedetect=noise=-38dB:d=0.12 -f null -` (and `-34dB:d=0.05` for commas).
+   Map each script phrase to a speech segment in `src/data/<name>-phrases.json` as `[startSec, endSec, "text"]`.
+3. `node scripts/align-script.mjs src/data/<name>-phrases.json src/data/<name>-captions.json` → word-level `Caption[]`.
+4. Build a shot list `{ start, tr, C }` (one shot per narration beat); shots receive absolute time `t` (seconds) so
+   actions are keyed to narration timestamps. Transitions: `cut | fade | slide | whip | iris | black`.
+5. Music bed via `node scripts/make-audio.mjs <seconds>`; keep music at `volume={0.1}` and sfx ≤ 0.3 under the voice.
+6. Review: bundle once (`npx remotion bundle src/index.ts --out-dir=.bundle`), render stills per shot at `--scale=0.25`,
+   check framing, then `npx remotion render .bundle <Id> out/<name>.mp4 --concurrency=4`.
+Framing tips for 9:16: the frame is narrow (≈0.43 units wide per 1 unit of distance at fov 42), so stack characters
+in depth / over-the-shoulder instead of side by side; keep cameras inside room walls and above/beside heads (hats occlude).
