@@ -18,5 +18,5 @@ export const idleBlink = (t: number, seed: number) => {
   return 1;
 };
 
-/** Distance-driven walk phase so feet never slide: one stride (two steps) ≈ 1.04 units (long reference legs). */
-export const walkPhase = (distance: number) => (distance / 0.52) * Math.PI;
+/** Distance-driven walk phase so feet never slide: one stride (two steps) ≈ 0.84 units. */
+export const walkPhase = (distance: number) => (distance / 0.42) * Math.PI;

@@ -68,9 +68,10 @@ Captions for narrated shorts (matches the reference video, 15% smaller):
 heavy white Montserrat 900, thin dark outline, firm drop shadow down-right, centred, block centre anchored at 70.5% of
 frame height (resizing never moves it), 1–2 words per caption, never across a sentence end. Keep the caption position
 fixed; if it would cover eyes/mouth in a close-up, re-aim that camera slightly lower instead of moving the caption.
-Reference look (style video, Oct 2026): long thin legs (`HIP_Y`), slim torso, thin limbs, small hands, cool-white heads,
-small deadpan eyes with an upper-lid line (`face.lid`), thin brows/mouth; soft 5-step toon ramp; painterly brush strokes
-on every canvas texture (pass `painterly=false` for text); warm grade + animated grain + haze in `Stage`.
+Reference look (ship/chef/storm video, Nov 2026 — current house style): bold black ink outlines on characters AND props
+(`INK_WEIGHT` = 1.4 scales every `Line`), crisp 3-band cel shading, very saturated warm colour (`Stage` grade
+saturate 1.28 / contrast 1.08), medium-length thin legs (`HIP_Y` = 0.85), small deadpan eyes with an upper-lid line
+(`face.lid`), thin brows/mouth, subtle painted texture on surfaces, light grain, dramatic light shafts (`LightShafts`).
 Standing shots use `<CameraRig lift={STAND_LIFT}>`; seated-in-chair characters use `seated`.
 Known limitation: @react-three/postprocessing (DoF/bloom) renders blank inside Remotion's software-WebGL capture here.
 Prefer cut / fade (12 f) transitions; avoid whip-blur and camera shake.

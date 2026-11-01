@@ -29,7 +29,7 @@ const brushStrokes = (ctx: CanvasRenderingContext2D, w: number, h: number, seed:
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(ang);
-    ctx.globalAlpha = 0.05 + r() * 0.07;
+    ctx.globalAlpha = 0.025 + r() * 0.04;
     ctx.fillStyle = r() > 0.5 ? "#ffffff" : "#000000";
     ctx.beginPath();
     ctx.ellipse(0, 0, len, 1.5 + r() * 2.5, 0, 0, Math.PI * 2);

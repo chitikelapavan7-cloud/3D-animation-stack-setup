@@ -4,14 +4,14 @@ import * as THREE from "three";
 export const INK = "#141414";
 
 let gradient: THREE.DataTexture | null = null;
-/** Soft toon shading ramp. */
+/** Crisp 3-band cel-shading ramp. */
 export const toonGradient = () => {
   if (gradient) return gradient;
-  // soft 5-step ramp, linearly blended: gentle painterly shading like the reference (not hard cel bands)
-  const data = new Uint8Array([120, 160, 200, 232, 255]);
+  // crisp 3-band cel shading (ship-video reference): clear light / mid / shadow shapes
+  const data = new Uint8Array([105, 185, 255]);
   gradient = new THREE.DataTexture(data, data.length, 1, THREE.RedFormat);
-  gradient.minFilter = THREE.LinearFilter;
-  gradient.magFilter = THREE.LinearFilter;
+  gradient.minFilter = THREE.NearestFilter;
+  gradient.magFilter = THREE.NearestFilter;
   gradient.generateMipmaps = false;
   gradient.needsUpdate = true;
   return gradient;
@@ -43,7 +43,11 @@ export const Ink: React.FC = () => <meshBasicMaterial color={INK} />;
  * Place as a child of a mesh: it borrows the parent's geometry and draws its back faces pushed
  * outward along the normals. (drei's <Outlines> does not render inside Remotion, so we use this.)
  */
-export const Line: React.FC<{ t?: number; color?: string }> = ({ t = 0.025, color = INK }) => {
+/** Global ink weight: the ship-video reference uses bold outlines on characters and props alike. */
+export const INK_WEIGHT = 1.4;
+
+export const Line: React.FC<{ t?: number; color?: string }> = ({ t: base = 0.025, color = INK }) => {
+  const t = base * INK_WEIGHT;
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({

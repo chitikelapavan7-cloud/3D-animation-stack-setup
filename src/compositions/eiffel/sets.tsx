@@ -65,7 +65,7 @@ export const Stage: React.FC<{ sky: string; vignette?: number; children: React.R
   return (
     <AbsoluteFill style={{ background: sky }}>
       {/* reference grade: richer saturation, slightly warmer */}
-      <AbsoluteFill style={{ filter: "saturate(1.14) contrast(1.04)" }}>
+      <AbsoluteFill style={{ filter: "saturate(1.28) contrast(1.08)" }}>
       <ThreeCanvas width={width} height={height} flat shadows>
         {children}
         {/* cool back/rim light separates characters from the background */}
@@ -81,7 +81,7 @@ export const Stage: React.FC<{ sky: string; vignette?: number; children: React.R
         }}
       />
       {/* animated film grain (deterministic per frame) */}
-      <svg width={width} height={height} style={{ position: "absolute", inset: 0, opacity: 0.11, mixBlendMode: "overlay" }}>
+      <svg width={width} height={height} style={{ position: "absolute", inset: 0, opacity: 0.07, mixBlendMode: "overlay" }}>
         <filter id={grainId}>
           <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves={2} seed={frame % 47} stitchTiles="stitch" />
           <feColorMatrix type="saturate" values="0" />
@@ -221,6 +221,57 @@ const Birds: React.FC<{ t: number }> = ({ t }) => (
   </>
 );
 
+/** Soft additive light shafts (reference: dramatic beams of light). Beams fall from `from` toward `dir`. */
+const beamTex = () =>
+  canvasTex(
+    "beam",
+    64,
+    256,
+    (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "rgba(255,236,190,0.55)");
+      g.addColorStop(1, "rgba(255,236,190,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      const sx = ctx.createLinearGradient(0, 0, w, 0);
+      sx.addColorStop(0, "rgba(0,0,0,1)");
+      sx.addColorStop(0.5, "rgba(0,0,0,0)");
+      sx.addColorStop(1, "rgba(0,0,0,1)");
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = sx;
+      ctx.fillRect(0, 0, w, h);
+    },
+    [1, 1],
+    false,
+  );
+
+export const LightShafts: React.FC<{ from: V3; tilt?: number; yaw?: number; count?: number; length?: number; strength?: number }> = ({
+  from,
+  tilt = 0.75,
+  yaw = 0.35,
+  count = 4,
+  length = 4.5,
+  strength = 0.7,
+}) => (
+  <group position={from} rotation={[0, yaw, 0]}>
+    {Array.from({ length: count }, (_, i) => (
+      <mesh key={i} position={[(i - (count - 1) / 2) * 0.28, 0, 0]} rotation={[tilt, 0, 0]}>
+        <mesh position={[0, -length / 2, 0]}>
+          <planeGeometry args={[0.32 + (i % 2) * 0.18, length]} />
+          <meshBasicMaterial
+            map={beamTex()}
+            transparent
+            opacity={strength * (0.6 + 0.4 * ((i * 37) % 10) / 10)}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </mesh>
+    ))}
+  </group>
+);
+
 const rug = (key: string, base: string, border: string) =>
   canvasTex(key, 512, 384, (ctx, w, h) => {
     ctx.fillStyle = border;
@@ -345,6 +396,7 @@ export const OfficeSet: React.FC<{ day?: boolean; clockHours?: number; lamp?: bo
     <Box size={[8, 0.7, 0.16]} position={[0, 0.35, -1.22]} map={planks("wains", "#6b3f22", 8, 3)} color="#ffffff" line={0.02} />
     <Box size={[8, 0.1, 6]} position={[0, -0.05, 1.2]} map={planks("officefloor", "#7a4a2a", 6, 9, [3, 3])} color="#ffffff" line={0} />
     <OfficeWindow position={[1.0, 2.0, -1.22]} day={day} />
+    {day && <LightShafts from={[1.0, 2.5, -1.1]} tilt={-0.85} yaw={-0.35} strength={0.5} />}
     <group position={[-1.95, 0, -1.0]}>
       <Box size={[1.1, 2.6, 0.4]} position={[0, 1.3, 0]} color="#5a3420" line={0.02} />
       {[0.55, 1.15, 1.75, 2.3].map((y, row) =>
@@ -540,6 +592,7 @@ export const SuiteSet: React.FC<{ dim?: number; table?: boolean; chairs?: boolea
       <group position={[-2.1, 2.0, -2.92]}>
         <OfficeWindow position={[0, 0, 0]} day />
       </group>
+      <LightShafts from={[-2.1, 2.5, -2.7]} tilt={-0.8} yaw={0.45} strength={0.55 * (1 - dim)} />
       <group position={[1.9, 2.15, -2.92]}>
         <Box size={[1.0, 1.2, 0.06]} color="#c99a3a" line={0.02} />
         <mesh position={[0, 0, 0.04]}>

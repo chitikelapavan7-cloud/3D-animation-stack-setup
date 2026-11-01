@@ -306,8 +306,8 @@ export type CharacterProps = {
   seated?: boolean;
 };
 
-/** Reference proportions: long thin legs. Standing characters' hips sit at HIP_Y; the upper body is lifted to match. */
-export const HIP_Y = 1.1;
+/** Reference proportions (ship video): medium-length thin legs. Standing hips sit at HIP_Y; the upper body is lifted to match. */
+export const HIP_Y = 0.85;
 export const STAND_LIFT = HIP_Y - 0.55;
 
 const SHOULDER_Y = 0.98;
@@ -413,7 +413,7 @@ export const Character: React.FC<CharacterProps> = ({
         !seated &&
         ([-1, 1] as const).map((s) => {
           const ph = walk === undefined ? 0 : walk + (s < 0 ? 0 : Math.PI);
-          const fz = walk === undefined ? 0 : Math.sin(ph) * 0.26;
+          const fz = walk === undefined ? 0 : Math.sin(ph) * 0.21;
           const fy = walk === undefined ? 0 : Math.max(0, Math.cos(ph)) * 0.1;
           const hip: V3 = [s * 0.09, HIP_Y + walkBob, 0];
           const foot: V3 = [s * 0.11, 0.035 + fy, fz];
