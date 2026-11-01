@@ -123,7 +123,7 @@ export const S2Rust: React.FC<ShotProps> = ({ t }) => {
   const flakes = Array.from({ length: 30 }, () => ({ x: (r() - 0.5) * 6, z: -16 + (r() - 0.5) * 4, o: r() * 14, s: 0.08 + r() * 0.1 }));
   const coins = Array.from({ length: 9 }, () => ({ x: 0.7 + r() * 1.6, d: r() * 0.5, spin: r() * 6 }));
   const swing = interpolate(t, [9.95, 10.75, 11.6], [1.25, -0.25, 0.1], { ...clamp, easing: Easing.inOut(Easing.quad) });
-  const pivot: V3 = [1.2, 10, -3.2];
+  const pivot: V3 = [2.2, 14.5, -9]; // well behind the crowd and above their heads, swinging toward the tower
   const ball: V3 = [pivot[0] + Math.sin(swing) * 8, pivot[1] - Math.cos(swing) * 8, pivot[2]];
   const shout = 0.6 + 0.4 * Math.abs(Math.sin(t * 9));
   const date = ramp(t, 5.05, 5.35) * (1 - ramp(t, 7.3, 7.6));
@@ -158,15 +158,15 @@ export const S2Rust: React.FC<ShotProps> = ({ t }) => {
         position={[-0.95, 0, 0.75]}
         rotationY={0.35}
         face={{ mouth: "laugh", mouthOpen: shout * 0.7, browTiltL: -0.3, browTiltR: -0.3, lookX: 0.3 }}
-        armL={[-0.05, 0.5, 0.15]}
-        armR={[0.05, 0.5, 0.15]}
+        armL={[0.2, 0.64, 0.2]}
+        armR={[-0.2, 0.7, 0.2]}
         props={
           <Sign
             tex={textTex("abas", [{ text: "À BAS", size: 80, color: "#c0182c" }, { text: "LA TOUR!", size: 80, color: "#1d2a3a" }], { bg: "#f7f0dc" })}
-            post={0.6}
+            post={0.75}
             w={1.0}
             h={0.55}
-            position={[0, 1.0, 0.18]}
+            position={[0, 1.55, 0.2]}
             scale={1}
           />
         }

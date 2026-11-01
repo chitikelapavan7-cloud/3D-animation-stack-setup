@@ -39,6 +39,10 @@ export const CameraRig: React.FC<{ position: V3; target: V3; fov?: number; roll?
   const raw: V3 = [p0[0], p0[1] + lift, p0[2]];
   const k = clampAlongRay(target, raw, lens.distance, lens.bounds);
   const position: V3 = [0, 1, 2].map((i) => target[i] + (raw[i] - target[i]) * k) as V3;
+  // Upward-looking shots: pulling back along the ray would sink the camera (even below the ground).
+  // Pull back horizontally only — keep the authored height — and never go below eye-safe ground clearance.
+  if (position[1] < raw[1]) position[1] = raw[1];
+  position[1] = Math.max(position[1], 0.35);
   camera.position.set(...position);
   camera.up.set(Math.sin(roll), Math.cos(roll), 0);
   camera.lookAt(...target);
