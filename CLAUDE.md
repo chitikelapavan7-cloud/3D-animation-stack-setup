@@ -74,6 +74,9 @@ saturate 1.28 / contrast 1.08), medium-length thin legs (`HIP_Y` = 0.85), small 
 (`face.lid`), thin brows/mouth, subtle painted texture on surfaces, light grain, dramatic light shafts (`LightShafts`).
 Standing shots use `<CameraRig lift={STAND_LIFT}>`; seated-in-chair characters use `seated`.
 Known limitation: @react-three/postprocessing (DoF/bloom) renders blank inside Remotion's software-WebGL capture here.
+Framing: the user prefers WIDE shots. `Stage` wraps every shot in a `Lens` context (`WIDE` in eiffel/sets.tsx:
+distance 1.8x along each camera's line of sight, lens 42->56 deg); interior shots pass `bounds={SUITE_BOUNDS|OFFICE_BOUNDS}`
+so the camera stops at the walls. Author cameras as before; the lens widens them consistently.
 Prefer cut / fade (12 f) transitions; avoid whip-blur and camera shake.
 Framing tips for 9:16: the frame is narrow (≈0.43 units wide per 1 unit of distance at fov 42), so stack characters
 in depth / over-the-shoulder instead of side by side; keep cameras inside room walls and above/beside heads (hats occlude).

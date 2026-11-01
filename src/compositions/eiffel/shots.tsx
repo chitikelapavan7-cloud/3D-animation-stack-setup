@@ -21,7 +21,7 @@ import { Line, Stick, ToonMat } from "../../style/toon";
 import { rng } from "../../style/textures";
 import { walkPhase } from "../../style/time";
 import { Dealer, Lustig, Parisian, Poisson } from "./cast";
-import { HotelFacade, OfficeSet, ParisSet, ScrapyardSet, SEATS, SKY_DAY, SKY_GRAY, SKY_SUNSET, Stage, SuiteSet, TrainSet } from "./sets";
+import { HotelFacade, OFFICE_BOUNDS, OfficeSet, ParisSet, ScrapyardSet, SEATS, SKY_DAY, SKY_GRAY, SKY_SUNSET, Stage, SUITE_BOUNDS, SuiteSet, TrainSet } from "./sets";
 
 type V3 = [number, number, number];
 export type ShotProps = { t: number };
@@ -213,7 +213,7 @@ export const S3Letterhead: React.FC<ShotProps> = ({ t }) => {
   const stampAt: V3 = [0.15, stampY, 0.55];
   const look = ramp(t, 13.95, 14.25);
   return (
-    <Stage sky="#120e1a">
+    <Stage bounds={OFFICE_BOUNDS} sky="#120e1a">
       <CameraRig
         position={kf3(t, [11.6, 13.2, 14.62], [[0.38, 1.6, 1.45], [0.25, 1.85, 2.8], [0.05, 1.9, 3.4]])}
         target={kf3(t, [11.6, 13.2, 14.62], [[0.15, 0.95, 0.5], [0.1, 1.35, 0.3], [0, 1.5, 0]])}
@@ -296,7 +296,7 @@ export const S5Dealers: React.FC<ShotProps> = ({ t }) => {
     </group>
   );
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         lift={STAND_LIFT}
         position={kf3(t, [16.62, 19.7], [[0.35, 1.95, -1.9], [0.0, 1.8, -1.2]])}
@@ -365,7 +365,7 @@ export const S6Meeting: React.FC<ShotProps> = ({ t }) => {
   const lean = ramp(t, 21.5, 21.9) * (1 - ramp(t, 22.6, 23.0));
   const finger = ramp(t, 22.6, 22.85);
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={kf3(t, [19.7, 23.4], [[0, 2.15, 3.6], [0, 1.95, 2.9]])}
         target={kf3(t, [19.7, 23.4], [[-0.2, 1.45, -0.9], [-0.1, 1.55, -0.9]])}
@@ -398,7 +398,7 @@ export const S7Bid: React.FC<ShotProps> = ({ t }) => {
   const spread = ramp(t, 23.45, 23.8);
   const sparkle = 0.6 + 0.4 * Math.sin(t * 10);
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={kf3(t, [23.4, 25.55], [[0.95, 1.12, 1.75], [0.3, 1.2, 1.35]])}
         target={kf3(t, [23.4, 25.55], [[0, 1.3, -0.5], [0, 1.35, -0.6]])}
@@ -425,7 +425,7 @@ export const S8Riots: React.FC<ShotProps> = ({ t }) => {
   const pan = t >= 26.75 ? 1 : 0; // hard cut to the frightened dealers on "or there'll be riots"
   const fear = ramp(t, 26.9, 27.2);
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={pan < 0.5 ? lerp3([0.05, 1.85, 1.5], [0.05, 1.8, 1.25], ramp(t, 25.55, 26.75)) : lerp3([-0.05, 1.85, 0.95], [-0.2, 1.8, 0.8], ramp(t, 26.75, 28.2))}
         target={pan < 0.5 ? [0, 1.24, -0.95] : [-1.95, 1.5, -0.12]}
@@ -455,7 +455,7 @@ export const S9Poisson: React.FC<ShotProps> = ({ t }) => {
   const love = pop(t, 30.4, 9);
   const name = ramp(t, 29.2, 29.45) * (1 - ramp(t, 31.6, 31.9));
   return (
-    <Stage sky="#2a1a14" overlay={<Overlay text="ANDRÉ POISSON" sub="scrap dealer" opacity={name} top="14%" size={84} />}>
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14" overlay={<Overlay text="ANDRÉ POISSON" sub="scrap dealer" opacity={name} top="14%" size={84} />}>
       <CameraRig
         position={kf3(t, [28.2, 32.0], [[0.55, 1.78, -0.95], [0.82, 1.65, -0.35]])}
         target={kf3(t, [28.2, 32.0], [[0.8, 1.3, 1.05], [0.85, 1.33, 1.05]])}
@@ -495,7 +495,7 @@ export const S10FeltOff: React.FC<ShotProps> = ({ t }) => {
   const sus = ramp(t, 32.25, 32.6);
   const hearts = 1 - ramp(t, 32.0, 32.25);
   return (
-    <Stage sky="#1a1010" vignette={0.6}>
+    <Stage bounds={SUITE_BOUNDS} sky="#1a1010" vignette={0.6}>
       <CameraRig
         position={kf3(t, [32.0, 34.1], [[0.85, 1.75, -1.05], [0.85, 1.7, -0.8]])}
         target={[0.85, 1.33, 1.05]}
@@ -536,7 +536,7 @@ export const S11Confess: React.FC<ShotProps> = ({ t }) => {
   const shock = ramp(t, 38.75, 38.95);
   const lPos: V3 = [0.55, 0, -0.85];
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={kf3(t, [34.1, 39.2], [[2.6, 1.8, 2.3], [2.4, 1.75, 2.0]])}
         target={kf3(t, [34.1, 39.2], [[0.55, 1.45, -0.8], [0.55, 1.5, -0.8]])}
@@ -593,7 +593,7 @@ export const S12Realize: React.FC<ShotProps> = ({ t }) => {
   const happy = ramp(t, 41.1, 41.3);
   const nod = t > 41.2 && t < 42.9 ? Math.sin((t - 41.2) * 9) * 0.12 : 0;
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={kf3(t, [39.2, 43.1], [[0.85, 1.95, -2.35], [0.85, 1.9, -1.95]])}
         target={[0.85, 1.6, 1.05]}
@@ -633,7 +633,7 @@ export const S13Paid: React.FC<ShotProps> = ({ t }) => {
   const pArm = slide < 1 ? armTo([env[0] + 0.05, env[1] + 0.05, env[2] + 0.1], POISSON_SEAT, Math.PI, "R") : lerp3(armTo([0.35, 0.95, -0.25], POISSON_SEAT, Math.PI, "R"), [-0.05, -0.18, 0.42], grab);
   const lArm = slide > 0.85 ? armTo([env[0], env[1] + 0.05, env[2] - 0.05], lPos, 0, "R") : ([0.18, -0.3, 0.15] as V3);
   return (
-    <Stage sky="#2a1a14">
+    <Stage bounds={SUITE_BOUNDS} sky="#2a1a14">
       <CameraRig
         position={kf3(t, [43.1, 44.3], [[2.8, 2.3, 0.6], [2.6, 2.25, 0.4]])}
         target={[0.45, 1.3, -0.3]}
@@ -689,7 +689,7 @@ export const S15Waited: React.FC<ShotProps> = ({ t }) => {
   const lPos: V3 = [0.45, 0, 0.3];
   const paperY = 1.22 - lower * 0.35;
   return (
-    <Stage sky="#f2e6cc">
+    <Stage bounds={OFFICE_BOUNDS} sky="#f2e6cc">
       <CameraRig
         position={kf3(t, [47.9, 51.0], [[0.25, 1.75, 4.3], [0.4, 1.6, 3.3]])}
         target={lerp3(kf3(t, [47.9, 51.0], [[0.0, 1.5, 0], [0.4, 1.4, 0.3]]), [-1.7, 1.4, 0.4], pan)}

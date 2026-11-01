@@ -1,4 +1,5 @@
 import { useThree } from "@react-three/fiber";
+import { Lens, type Bounds } from "../../style/Camera";
 import { ThreeCanvas } from "@remotion/three";
 import { useId, useLayoutEffect } from "react";
 import * as THREE from "three";
@@ -52,13 +53,19 @@ const ShadowRig: React.FC<{ extent?: number }> = ({ extent = 6 }) => {
 };
 
 /** Canvas + painted sky + vignette. Children are the 3D scene. */
-export const Stage: React.FC<{ sky: string; vignette?: number; children: React.ReactNode; overlay?: React.ReactNode; shadowExtent?: number }> = ({
-  sky,
-  vignette = 0.3,
-  children,
-  overlay,
-  shadowExtent,
-}) => {
+/** Wide-shot framing for the whole film: cameras pulled back ~40% and a wider lens (stopped at room walls). */
+export const WIDE = { distance: 1.8, fovScale: 56 / 42 };
+export const SUITE_BOUNDS: Bounds = { min: [-3.95, 0.4, -2.75], max: [3.95, 3.6, 3.95] };
+export const OFFICE_BOUNDS: Bounds = { min: [-2.35, 0.3, -1.05], max: [9, 6, 12] };
+
+export const Stage: React.FC<{
+  sky: string;
+  vignette?: number;
+  children: React.ReactNode;
+  overlay?: React.ReactNode;
+  shadowExtent?: number;
+  bounds?: Bounds;
+}> = ({ sky, vignette = 0.3, children, overlay, shadowExtent, bounds }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
   const grainId = `grain${useId().replace(/:/g, "")}`;
@@ -67,7 +74,7 @@ export const Stage: React.FC<{ sky: string; vignette?: number; children: React.R
       {/* reference grade: richer saturation, slightly warmer */}
       <AbsoluteFill style={{ filter: "saturate(1.28) contrast(1.08)" }}>
       <ThreeCanvas width={width} height={height} flat shadows>
-        {children}
+        <Lens.Provider value={{ ...WIDE, bounds }}>{children}</Lens.Provider>
         {/* cool back/rim light separates characters from the background */}
         <directionalLight position={[-3, 4, -6]} intensity={0.45} color="#cfe0ff" />
         <ShadowRig extent={shadowExtent} />
