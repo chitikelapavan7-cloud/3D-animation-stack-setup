@@ -8,7 +8,7 @@ import current from "../../data/eiffel-captions.json";
  * we map time word-by-word (piecewise-linear between matching word starts) instead of re-authoring shots.
  * Swapping in another take = new eiffel-captions.json (same script) + VOICE_SECONDS.
  */
-export const VOICE_SECONDS = 59.688; // public/audio/eiffel-voiceover.mp3
+export const VOICE_SECONDS = 53.197; // public/audio/eiffel-voiceover.wav (final take)
 const V1_SECONDS = 58.32;
 
 const a = v1 as Caption[];

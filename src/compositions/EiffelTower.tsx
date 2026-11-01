@@ -8,7 +8,7 @@ import envelope from "../data/eiffel-voice-envelope.json";
 import { SceneTime } from "../style/time";
 import { toScript, toVoice, VOICE_SECONDS } from "./eiffel/timeMap";
 
-/** The video is exactly as long as the narration (public/audio/eiffel-voiceover.mp3). */
+/** The video is exactly as long as the narration (public/audio/eiffel-voiceover.wav). */
 export const EIFFEL_FPS = 30;
 export const EIFFEL_DURATION = Math.ceil(VOICE_SECONDS * EIFFEL_FPS);
 
@@ -100,7 +100,7 @@ export const EiffelTower: React.FC = () => {
       <AbsoluteFill style={{ background: "black", opacity: endFade }} />
 
       {/* the user's voiceover, untouched: full volume, normal speed */}
-      <Audio src={staticFile("audio/eiffel-voiceover.mp3")} />
+      <Audio src={staticFile("audio/eiffel-voiceover.wav")} />
       {/* background music kept low under the voice */}
       <Audio src={staticFile("audio/eiffel-music.wav")} volume={0.1} />
       {SFX.map((s, i) => (
