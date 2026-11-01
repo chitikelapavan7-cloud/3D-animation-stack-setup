@@ -309,8 +309,9 @@ export const ParisSet: React.FC<{ rusty?: boolean; t?: number }> = ({ rusty, t =
       <directionalLight position={[4, 8, 6]} intensity={rusty ? 0.9 : 1.8} color={rusty ? "#e6e6ee" : "#fff1d6"} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -20]}>
-        <planeGeometry args={[120, 80]} />
-        <ToonMat color={rusty ? "#6f9356" : "#69b34c"} map={speckled("grass", "#ffffff", 5, [30, 20])} />
+        {/* large enough that pulled-back wide cameras never see its edge */}
+        <planeGeometry args={[320, 240]} />
+        <ToonMat color={rusty ? "#6f9356" : "#69b34c"} map={speckled("grass", "#ffffff", 5, [80, 60])} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -10]}>
         <planeGeometry args={[3, 40]} />
